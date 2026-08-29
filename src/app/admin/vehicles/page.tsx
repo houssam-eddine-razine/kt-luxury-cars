@@ -3,7 +3,7 @@ import { Car, Plus } from "lucide-react";
 
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -60,12 +60,13 @@ export default async function VehiclesPage() {
           </p>
         </div>
 
-        <Button asChild>
-          <Link href="/admin/vehicles/new">
+        <Link
+            href="/admin/vehicles/new"
+            className={buttonVariants()}
+            >
             <Plus className="mr-2 size-4" />
             Add vehicle
-          </Link>
-        </Button>
+        </Link>
       </div>
 
       <Card>
@@ -104,12 +105,13 @@ export default async function VehiclesPage() {
                         Add your first vehicle to begin managing your fleet.
                       </p>
 
-                      <Button asChild className="mt-5">
-                        <Link href="/admin/vehicles/new">
-                          <Plus className="mr-2 size-4" />
-                          Add first vehicle
-                        </Link>
-                      </Button>
+                      <Link
+                            href="/admin/vehicles/new"
+                            className={`${buttonVariants()} mt-5`}
+                            >
+                            <Plus className="mr-2 size-4" />
+                            Add first vehicle
+                       </Link>
                     </div>
                   </TableCell>
                 </TableRow>
