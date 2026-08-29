@@ -20,15 +20,12 @@ function createSlug(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-export async function createVehicle(
-  _previousState: VehicleActionState,
-  formData: FormData,
-): Promise<VehicleActionState> {
+function getVehicleData(formData: FormData) {
   const registration = String(formData.get("registration") ?? "")
     .trim()
     .toUpperCase();
 
-  const result = vehicleSchema.safeParse({
+  return vehicleSchema.safeParse({
     brand: formData.get("brand"),
     model: formData.get("model"),
     trim: formData.get("trim"),
@@ -52,6 +49,13 @@ export async function createVehicle(
     visible: formData.get("visible") === "on",
     featured: formData.get("featured") === "on",
   });
+}
+
+export async function createVehicle(
+  _previousState: VehicleActionState,
+  formData: FormData,
+): Promise<VehicleActionState> {
+  const result = getVehicleData(formData);
 
   if (!result.success) {
     return {
@@ -67,14 +71,9 @@ export async function createVehicle(
 
   const existingVehicle = await prisma.vehicle.findFirst({
     where: {
-      OR: [
-        { registration: data.registration },
-        { slug },
-      ],
+      OR: [{ registration: data.registration }, { slug }],
     },
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
 
   if (existingVehicle) {
@@ -99,6 +98,83 @@ export async function createVehicle(
     return {
       message: "The vehicle could not be created. Please try again.",
     };
+  }
+
+  revalidatePath("/admin/vehicles");
+  redirect("/admin/vehicles");
+}
+
+export async function updateVehicle(
+  vehicleId: string,
+  _previousState: VehicleActionState,
+  formData: FormData,
+): Promise<VehicleActionState> {
+  const result = getVehicleData(formData);
+
+  if (!result.success) {
+    return {
+      message: "Please correct the highlighted information.",
+      errors: result.error.flatten().fieldErrors,
+    };
+  }
+
+  const data = result.data;
+  const slug = createSlug(
+    `${data.brand}-${data.model}-${data.registration}`,
+  );
+
+  const duplicate = await prisma.vehicle.findFirst({
+    where: {
+      id: {
+        not: vehicleId,
+      },
+      OR: [{ registration: data.registration }, { slug }],
+    },
+    select: { id: true },
+  });
+
+  if (duplicate) {
+    return {
+      message: "Another vehicle uses this registration.",
+      errors: {
+        registration: ["This registration is already registered."],
+      },
+    };
+  }
+
+  try {
+    await prisma.vehicle.update({
+      where: {
+        id: vehicleId,
+      },
+      data: {
+        ...data,
+        slug,
+      },
+    });
+  } catch (error) {
+    console.error("Vehicle update failed:", error);
+
+    return {
+      message: "The changes could not be saved. Please try again.",
+    };
+  }
+
+  revalidatePath("/admin/vehicles");
+  revalidatePath(`/admin/vehicles/${vehicleId}/edit`);
+  redirect("/admin/vehicles");
+}
+
+export async function deleteVehicle(vehicleId: string) {
+  try {
+    await prisma.vehicle.delete({
+      where: {
+        id: vehicleId,
+      },
+    });
+  } catch (error) {
+    console.error("Vehicle deletion failed:", error);
+    return;
   }
 
   revalidatePath("/admin/vehicles");
