@@ -1,6 +1,10 @@
-"use client";
+﻿"use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  useMemo,
+  useState,
+} from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -9,6 +13,8 @@ import {
   MapPin,
   MessageCircle,
 } from "lucide-react";
+
+const phone = "212619019549";
 
 function getToday() {
   const date = new Date();
@@ -20,25 +26,36 @@ function getToday() {
     .split("T")[0];
 }
 
+const fieldClassName =
+  "min-h-14 w-full rounded-[12px] border border-[#d8cdbb] bg-white px-4 text-[15px] font-semibold text-[#0B1726] outline-none transition focus:border-[#a47d2f] focus:ring-4 focus:ring-[#c8a45d]/15";
+
 export function BookingBar() {
   const today = useMemo(() => getToday(), []);
 
-  const [location, setLocation] = useState("Marrakech Airport");
-  const [pickupDate, setPickupDate] = useState("");
+  const [location, setLocation] = useState(
+    "Marrakech Airport",
+  );
+  const [pickup, setPickup] = useState("");
   const [returnDate, setReturnDate] = useState("");
-  const [category, setCategory] = useState("All categories");
+  const [category, setCategory] = useState(
+    "All categories",
+  );
   const [error, setError] = useState("");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!pickupDate || !returnDate) {
-      setError("Please select your pick-up and return dates.");
+    if (!pickup || !returnDate) {
+      setError(
+        "Please select your pick-up and return dates.",
+      );
       return;
     }
 
-    if (returnDate < pickupDate) {
-      setError("The return date must be after the pick-up date.");
+    if (returnDate < pickup) {
+      setError(
+        "The return date must be after the pick-up date.",
+      );
       return;
     }
 
@@ -47,177 +64,180 @@ export function BookingBar() {
     const message = [
       "Hello KT Luxury Cars,",
       "",
-      "I would like to check vehicle availability.",
+      "Please check vehicle availability for me.",
       "",
       `Pick-up location: ${location}`,
-      `Pick-up date: ${pickupDate}`,
+      `Pick-up date: ${pickup}`,
       `Return date: ${returnDate}`,
-      `Preferred category: ${category}`,
-      "",
-      "Please send me the available vehicles, exact prices and rental conditions.",
+      `Vehicle category: ${category}`,
     ].join("\n");
 
     window.open(
-      `https://wa.me/212619019549?text=${encodeURIComponent(message)}`,
+      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
       "_blank",
       "noopener,noreferrer",
     );
   }
 
+  const directMessage = encodeURIComponent(
+    "Hello KT Luxury Cars, I would like help choosing a rental car in Marrakech.",
+  );
+
   return (
-    <div className="overflow-hidden rounded-[22px] border border-[#c8a45d]/55 bg-[#062b23] shadow-[0_28px_80px_rgba(4,27,22,0.3)]">
-      <div className="border-b border-white/10 px-6 py-5 sm:px-8 lg:flex lg:items-center lg:justify-between">
+    <form
+      onSubmit={submit}
+      className="overflow-hidden rounded-[22px] border border-[#d8cdbb] bg-[#FFFCF7] shadow-[0_22px_60px_rgba(24,48,41,0.14)] sm:rounded-[26px]"
+    >
+      <div className="border-b border-[#e4dacb] px-5 py-5 sm:px-7 sm:py-6 lg:flex lg:items-center lg:justify-between lg:gap-8">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.19em] text-[#d7b767]">
+          <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#9a762f] sm:text-base">
             Plan your journey
           </p>
 
-          <p className="mt-1 text-sm text-white/65">
-            Select your dates and receive availability directly.
+          <p className="mt-1.5 text-sm leading-6 text-[#66727D] sm:text-[15px]">
+            Select your details and receive availability
+            directly.
           </p>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/65 lg:mt-0">
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-[#596875] lg:mt-0">
           <span className="flex items-center gap-2">
-            <Check className="size-4 text-[#d7b767]" />
-            No payment required
+            <Check className="size-4 text-[#a47d2f]" />
+            No online payment
           </span>
 
           <span className="flex items-center gap-2">
-            <Check className="size-4 text-[#d7b767]" />
+            <Check className="size-4 text-[#a47d2f]" />
             Personal confirmation
           </span>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid lg:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_1fr_270px]">
-          <label className="border-b border-white/10 p-5 transition focus-within:bg-white/[0.05] lg:border-r xl:border-b-0">
-            <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#d7b767]">
-              <MapPin className="size-4" />
-              Pick-up
-            </span>
+      <div className="grid gap-5 p-5 sm:p-7 md:grid-cols-2 xl:grid-cols-4">
+        <label className="block">
+          <span className="mb-2.5 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#8d6b2b]">
+            <MapPin className="size-4" />
+            Pick-up
+          </span>
 
-            <select
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              className="mt-4 min-h-12 w-full cursor-pointer rounded-[9px] border border-white/10 bg-white/[0.07] px-4 text-sm font-semibold text-white outline-none focus:border-[#c8a45d]"
-            >
-              <option className="bg-[#062b23]">
-                Marrakech Airport
-              </option>
-              <option className="bg-[#062b23]">
-                Marrakech city centre
-              </option>
-              <option className="bg-[#062b23]">
-                Marrakech train station
-              </option>
-              <option className="bg-[#062b23]">
-                Hotel or riad delivery
-              </option>
-            </select>
-          </label>
-
-          <label className="border-b border-white/10 p-5 transition focus-within:bg-white/[0.05] lg:border-r xl:border-b-0">
-            <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#d7b767]">
-              <CalendarDays className="size-4" />
-              Pick-up date
-            </span>
-
-            <input
-              type="date"
-              required
-              min={today}
-              value={pickupDate}
-              onChange={(event) => {
-                const value = event.target.value;
-
-                setPickupDate(value);
-
-                if (returnDate && returnDate < value) {
-                  setReturnDate("");
-                }
-              }}
-              className="mt-4 min-h-12 w-full rounded-[9px] border border-white/10 bg-white/[0.07] px-4 text-sm font-semibold text-white outline-none focus:border-[#c8a45d] [color-scheme:dark]"
-            />
-          </label>
-
-          <label className="border-b border-white/10 p-5 transition focus-within:bg-white/[0.05] lg:border-r xl:border-b-0">
-            <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#d7b767]">
-              <CalendarDays className="size-4" />
-              Return date
-            </span>
-
-            <input
-              type="date"
-              required
-              min={pickupDate || today}
-              value={returnDate}
-              onChange={(event) =>
-                setReturnDate(event.target.value)
-              }
-              className="mt-4 min-h-12 w-full rounded-[9px] border border-white/10 bg-white/[0.07] px-4 text-sm font-semibold text-white outline-none focus:border-[#c8a45d] [color-scheme:dark]"
-            />
-          </label>
-
-          <label className="border-b border-white/10 p-5 transition focus-within:bg-white/[0.05] lg:border-r xl:border-b-0">
-            <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.17em] text-[#d7b767]">
-              <CarFront className="size-4" />
-              Vehicle
-            </span>
-
-            <select
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              className="mt-4 min-h-12 w-full cursor-pointer rounded-[9px] border border-white/10 bg-white/[0.07] px-4 text-sm font-semibold text-white outline-none focus:border-[#c8a45d]"
-            >
-              <option className="bg-[#062b23]">
-                All categories
-              </option>
-              <option className="bg-[#062b23]">City</option>
-              <option className="bg-[#062b23]">Premium</option>
-              <option className="bg-[#062b23]">Luxury</option>
-              <option className="bg-[#062b23]">SUV</option>
-            </select>
-          </label>
-
-          <div className="flex p-5 lg:col-span-2 xl:col-span-1">
-            <button
-              type="submit"
-              className="group flex min-h-16 w-full items-center justify-center gap-3 rounded-[10px] bg-[#c8a45d] px-7 text-sm font-bold text-[#06251e] transition hover:bg-[#d9b86f]"
-            >
-              Check availability
-
-              <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <p
-            role="alert"
-            className="border-t border-red-300/20 bg-red-950/30 px-6 py-4 text-sm font-semibold text-red-100"
+          <select
+            value={location}
+            onChange={(event) =>
+              setLocation(event.target.value)
+            }
+            className={fieldClassName}
           >
-            {error}
-          </p>
-        )}
+            <option>Marrakech Airport</option>
+            <option>Marrakech city centre</option>
+            <option>Marrakech train station</option>
+            <option>Hotel or riad delivery</option>
+            <option>Private villa delivery</option>
+          </select>
+        </label>
 
-        <div className="flex flex-col justify-between gap-3 border-t border-white/10 bg-[#041f19] px-6 py-4 text-xs text-white/55 sm:flex-row sm:items-center sm:px-8">
-          <p>
-            Airport, hotel, riad and private-villa delivery available.
-          </p>
+        <label className="block">
+          <span className="mb-2.5 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#8d6b2b]">
+            <CalendarDays className="size-4" />
+            Pick-up date
+          </span>
 
+          <input
+            type="date"
+            required
+            min={today}
+            value={pickup}
+            onChange={(event) => {
+              const selectedDate = event.target.value;
+
+              setPickup(selectedDate);
+
+              if (
+                returnDate &&
+                returnDate < selectedDate
+              ) {
+                setReturnDate("");
+              }
+            }}
+            className={`${fieldClassName} [color-scheme:light]`}
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-2.5 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#8d6b2b]">
+            <CalendarDays className="size-4" />
+            Return date
+          </span>
+
+          <input
+            type="date"
+            required
+            min={pickup || today}
+            value={returnDate}
+            onChange={(event) =>
+              setReturnDate(event.target.value)
+            }
+            className={`${fieldClassName} [color-scheme:light]`}
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-2.5 flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#8d6b2b]">
+            <CarFront className="size-4" />
+            Vehicle
+          </span>
+
+          <select
+            value={category}
+            onChange={(event) =>
+              setCategory(event.target.value)
+            }
+            className={fieldClassName}
+          >
+            <option>All categories</option>
+            <option>City</option>
+            <option>Premium</option>
+            <option>Luxury</option>
+            <option>SUV</option>
+          </select>
+        </label>
+      </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="mx-5 mb-5 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 sm:mx-7"
+        >
+          {error}
+        </p>
+      )}
+
+      <div className="flex flex-col gap-3 border-t border-[#e4dacb] bg-[#F7F2E9] p-5 sm:p-7 md:flex-row md:items-center md:justify-between">
+        <p className="text-center text-xs leading-5 text-[#74808A] md:text-left">
+          Airport, hotel, riad and private-villa delivery
+          available.
+        </p>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
           <a
-            href="https://wa.me/212619019549"
+            href={`https://wa.me/${phone}?text=${directMessage}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 font-bold text-[#d7b767] transition hover:text-white"
+            className="inline-flex min-h-14 items-center justify-center gap-2 rounded-[12px] border border-[#b9964d] bg-white px-5 text-sm font-bold text-[#0B1726] transition hover:bg-[#f1e7d5]"
           >
-            <MessageCircle className="size-4" />
-            Prefer to speak directly?
+            <MessageCircle className="size-5 text-[#128c5a]" />
+            Speak directly
           </a>
+
+          <button
+            type="submit"
+            className="group inline-flex min-h-14 items-center justify-center gap-3 rounded-[12px] bg-[#c8a45d] px-6 text-sm font-extrabold text-[#0B1726] shadow-[0_12px_25px_rgba(164,125,47,0.2)] transition hover:bg-[#d9b86f] sm:min-w-56"
+          >
+            Check availability
+
+            <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
+          </button>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }

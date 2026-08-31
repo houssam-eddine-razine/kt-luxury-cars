@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -155,8 +155,8 @@ export function VehicleBrowser({
                     onClick={() => setActiveFilter(filter.value)}
                     className={`min-h-12 shrink-0 rounded-full px-5 text-sm font-bold transition ${
                       active
-                        ? "bg-[#073b30] text-white shadow"
-                        : "border border-[#ded3c2] bg-[#fbf8f2] text-[#53675f] hover:border-[#a47d2f] hover:text-[#073b30]"
+                        ? "bg-[#0B1726] text-white shadow"
+                        : "border border-[#ded3c2] bg-[#fbf8f2] text-[#53675f] hover:border-[#a47d2f] hover:text-[#0B1726]"
                     }`}
                   >
                     {filter.label}
@@ -175,7 +175,7 @@ export function VehicleBrowser({
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search brand or model"
-                className="min-h-14 w-full rounded-[14px] border border-[#d9cebd] bg-[#fbf8f2] pl-12 pr-4 text-sm font-medium text-[#073b30] outline-none transition placeholder:text-[#8b9892] focus:border-[#a47d2f] focus:ring-4 focus:ring-[#c8a45d]/10"
+                className="min-h-14 w-full rounded-[14px] border border-[#d9cebd] bg-[#fbf8f2] pl-12 pr-4 text-sm font-medium text-[#0B1726] outline-none transition placeholder:text-[#8b9892] focus:border-[#a47d2f] focus:ring-4 focus:ring-[#c8a45d]/10"
               />
             </label>
           </div>
@@ -187,7 +187,7 @@ export function VehicleBrowser({
               Available now
             </p>
 
-            <h2 className="mt-2 font-heading text-3xl font-semibold text-[#073b30] sm:text-4xl">
+            <h2 className="mt-2 font-heading text-3xl font-semibold text-[#0B1726] sm:text-4xl">
               {filteredVehicles.length} vehicle
               {filteredVehicles.length === 1 ? "" : "s"}
             </h2>
@@ -211,11 +211,11 @@ export function VehicleBrowser({
           <div className="mt-8 rounded-[24px] border border-[#d9cebd] bg-white px-6 py-16 text-center shadow-sm">
             <CarFront className="mx-auto size-10 text-[#a47d2f]" />
 
-            <h3 className="mt-5 font-heading text-3xl font-semibold text-[#073b30]">
+            <h3 className="mt-5 font-heading text-3xl font-semibold text-[#0B1726]">
               No matching vehicles
             </h3>
 
-            <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#697972]">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#74808A]">
               Try another category or search. You can also contact our
               team for the latest availability.
             </p>
@@ -226,7 +226,7 @@ export function VehicleBrowser({
                 setActiveFilter("ALL");
                 setSearch("");
               }}
-              className="mt-6 min-h-12 rounded-[12px] bg-[#073b30] px-6 text-sm font-bold text-white"
+              className="mt-6 min-h-12 rounded-[12px] bg-[#0B1726] px-6 text-sm font-bold text-white"
             >
               View all vehicles
             </button>
@@ -260,13 +260,13 @@ export function VehicleBrowser({
 
                   <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
 
-                  <span className="absolute left-4 top-4 rounded-full bg-[#fbf7ef]/95 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#073b30] shadow">
+                  <span className="absolute left-4 top-4 rounded-full bg-[#fbf7ef]/95 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#0B1726] shadow">
                     {categoryLabels[vehicle.category] ??
                       formatEnum(vehicle.category)}
                   </span>
 
                   {vehicle.featured && (
-                    <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-[#073b30]/90 px-3 py-2 text-[10px] font-bold text-white backdrop-blur">
+                    <span className="absolute right-4 top-4 flex items-center gap-1.5 rounded-full bg-[#0B1726]/90 px-3 py-2 text-[10px] font-bold text-white backdrop-blur">
                       <Sparkles className="size-3 text-[#d8b868]" />
                       Featured
                     </span>
@@ -277,16 +277,16 @@ export function VehicleBrowser({
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9a762f]">
-                        {vehicle.year} ·{" "}
+                        {vehicle.year} Â·{" "}
                         {formatEnum(vehicle.transmission)}
                       </p>
 
-                      <h3 className="mt-2 truncate font-heading text-3xl font-semibold capitalize text-[#073b30]">
+                      <h3 className="mt-2 truncate font-heading text-3xl font-semibold capitalize text-[#0B1726]">
                         {vehicle.brand} {vehicle.model}
                       </h3>
 
                       {vehicle.trim && (
-                        <p className="mt-1 truncate text-sm text-[#697972]">
+                        <p className="mt-1 truncate text-sm text-[#74808A]">
                           {vehicle.trim}
                         </p>
                       )}
@@ -301,7 +301,7 @@ export function VehicleBrowser({
                         {formatPrice(vehicle.dailyPrice)}
                       </p>
 
-                      <p className="text-[10px] text-[#697972]">
+                      <p className="text-[10px] text-[#74808A]">
                         MAD / day
                       </p>
                     </div>
@@ -310,7 +310,7 @@ export function VehicleBrowser({
                   <div className="mt-5 grid grid-cols-3 divide-x divide-[#e5dccf] rounded-[14px] bg-[#f7f1e8] px-2 py-4 text-center">
                     <div>
                       <Users className="mx-auto size-4 text-[#8d6b2b]" />
-                      <p className="mt-1 text-xs font-bold text-[#073b30]">
+                      <p className="mt-1 text-xs font-bold text-[#0B1726]">
                         {vehicle.seats}
                       </p>
                       <p className="text-[10px] text-[#73817b]">
@@ -320,7 +320,7 @@ export function VehicleBrowser({
 
                     <div>
                       <Fuel className="mx-auto size-4 text-[#8d6b2b]" />
-                      <p className="mt-1 truncate px-1 text-xs font-bold text-[#073b30]">
+                      <p className="mt-1 truncate px-1 text-xs font-bold text-[#0B1726]">
                         {formatEnum(vehicle.fuelType)}
                       </p>
                       <p className="text-[10px] text-[#73817b]">
@@ -330,7 +330,7 @@ export function VehicleBrowser({
 
                     <div>
                       <CarFront className="mx-auto size-4 text-[#8d6b2b]" />
-                      <p className="mt-1 text-xs font-bold text-[#073b30]">
+                      <p className="mt-1 text-xs font-bold text-[#0B1726]">
                         {vehicle.doors}
                       </p>
                       <p className="text-[10px] text-[#73817b]">
@@ -341,11 +341,11 @@ export function VehicleBrowser({
 
                   <Link
                     href={`/vehicles/${vehicle.slug}`}
-                    className="group/link mt-5 flex min-h-14 items-center justify-between rounded-[14px] bg-[#073b30] px-5 text-sm font-bold text-white transition hover:bg-[#0b4b3d]"
+                    className="group/link mt-5 flex min-h-14 items-center justify-between rounded-[14px] bg-[#0B1726] px-5 text-sm font-bold text-white transition hover:bg-[#162536]"
                   >
                     View vehicle
 
-                    <span className="flex size-9 items-center justify-center rounded-full bg-[#d3ad5b] text-[#073b30]">
+                    <span className="flex size-9 items-center justify-center rounded-full bg-[#d3ad5b] text-[#0B1726]">
                       <ArrowRight className="size-4 transition-transform group-hover/link:translate-x-1" />
                     </span>
                   </Link>

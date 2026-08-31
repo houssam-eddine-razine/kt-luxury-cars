@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,7 +44,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="absolute inset-x-0 top-0 z-50 border-b border-white/10 bg-[#041b16]/90 text-white backdrop-blur-xl">
+    <header className="absolute inset-x-0 top-0 z-50 border-b border-white/10 bg-[#0B1726]/90 text-white backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-[1480px] items-center justify-between px-5 sm:px-8 lg:h-24 lg:px-12">
         <Link
           href="/"
@@ -100,7 +100,7 @@ export function SiteHeader() {
             href={whatsappUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex min-h-12 items-center gap-3 rounded-[12px] border border-[#c8a45d]/65 bg-[#073b30]/75 px-6 text-xs font-bold text-white transition hover:bg-[#c8a45d] hover:text-[#041b16]"
+            className="inline-flex min-h-12 items-center gap-3 rounded-[12px] border border-[#c8a45d]/65 bg-[#0B1726]/75 px-6 text-xs font-bold text-white transition hover:bg-[#c8a45d] hover:text-[#0B1726]"
           >
             <MessageCircle className="size-4" />
             WhatsApp
@@ -112,7 +112,7 @@ export function SiteHeader() {
           aria-label={open ? "Close navigation" : "Open navigation"}
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
-          className="flex size-12 items-center justify-center rounded-[12px] border border-[#c8a45d]/45 text-[#dec174] transition hover:bg-[#c8a45d] hover:text-[#041b16] lg:hidden"
+          className="flex size-12 items-center justify-center rounded-[12px] border border-[#c8a45d]/45 text-[#dec174] transition hover:bg-[#c8a45d] hover:text-[#0B1726] lg:hidden"
         >
           {open ? (
             <X className="size-5" />
@@ -123,7 +123,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <div className="border-t border-white/10 bg-[#041b16] px-5 pb-6 pt-4 lg:hidden">
+        <div className="border-t border-white/10 bg-[#0B1726] px-5 pb-6 pt-4 lg:hidden">
           <nav className="mx-auto flex max-w-[1480px] flex-col gap-1">
             {navigation.map((item) => (
               <Link

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
 import { VehicleBrowser } from "./vehicle-browser";
 import { SiteFooter } from "@/components/public/site-footer";
@@ -67,7 +67,7 @@ export default async function VehiclesPage() {
       <SiteHeader />
 
       <main>
-        <section className="relative overflow-hidden bg-[#041b16] px-5 pb-16 pt-32 text-white sm:px-8 lg:px-12 lg:pb-20 lg:pt-40">
+        <section className="relative overflow-hidden bg-[#0B1726] px-5 pb-16 pt-32 text-white sm:px-8 lg:px-12 lg:pb-20 lg:pt-40">
           <div className="absolute -right-40 top-0 size-[520px] rounded-full bg-[#c8a45d]/10 blur-3xl" />
           <div className="absolute -left-40 bottom-0 size-[440px] rounded-full bg-[#128c5a]/10 blur-3xl" />
 
@@ -93,9 +93,9 @@ export default async function VehiclesPage() {
 
                 <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/75">
                   <span>Private delivery</span>
-                  <span className="text-[#d8b868]">•</span>
+                  <span className="text-[#d8b868]">â€¢</span>
                   <span>Clear daily rates</span>
-                  <span className="text-[#d8b868]">•</span>
+                  <span className="text-[#d8b868]">â€¢</span>
                   <span>Direct assistance</span>
                 </div>
               </div>

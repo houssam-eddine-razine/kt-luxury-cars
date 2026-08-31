@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import {
   ArrowUpRight,
   Mail,
@@ -16,7 +16,7 @@ export function SiteFooter() {
   return (
     <footer
       id="contact"
-      className="overflow-hidden bg-[#041b16] px-5 pb-8 pt-16 text-white sm:px-8 lg:px-12 lg:pt-20"
+      className="overflow-hidden bg-[#0B1726] px-5 pb-8 pt-16 text-white sm:px-8 lg:px-12 lg:pt-20"
     >
       <div className="mx-auto max-w-[1400px]">
         <div className="grid gap-12 border-b border-white/10 pb-14 md:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
@@ -160,7 +160,7 @@ export function SiteFooter() {
               href={whatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-6 flex min-h-13 w-full items-center justify-between rounded-[10px] border border-[#c8a45d]/45 px-5 text-sm font-bold text-white transition hover:bg-[#c8a45d] hover:text-[#041b16]"
+              className="mt-6 flex min-h-13 w-full items-center justify-between rounded-[10px] border border-[#c8a45d]/45 px-5 text-sm font-bold text-white transition hover:bg-[#c8a45d] hover:text-[#0B1726]"
             >
               Start your request
               <ArrowUpRight className="size-5" />
@@ -169,10 +169,10 @@ export function SiteFooter() {
         </div>
 
         <div className="flex flex-col gap-4 pt-7 text-xs text-white/35 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 KT Luxury Cars. All rights reserved.</p>
+          <p>Â© 2026 KT Luxury Cars. All rights reserved.</p>
 
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <span>Marrakech · Morocco</span>
+            <span>Marrakech Â· Morocco</span>
             <span>Private car rental</span>
           </div>
         </div>

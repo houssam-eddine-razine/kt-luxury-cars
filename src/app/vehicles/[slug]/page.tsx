@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+﻿/* eslint-disable @next/next/no-img-element */
 
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -254,7 +254,7 @@ export default async function VehiclePage({
           <div className="mt-3 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_390px] xl:grid-cols-[minmax(0,1fr)_420px]">
             <div className="min-w-0 lg:col-start-1 lg:row-start-1">
               {coverImage ? (
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] bg-[#ded4c4] shadow-[0_20px_50px_rgba(35,45,41,0.10)] sm:aspect-[16/9] lg:h-[480px] lg:aspect-auto">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] bg-[#E4DDD2] shadow-[0_20px_50px_rgba(35,45,41,0.10)] sm:aspect-[16/9] lg:h-[480px] lg:aspect-auto">
                   <img
                     src={coverImage.url}
                     alt={coverImage.altText ?? vehicleName}
@@ -284,7 +284,7 @@ export default async function VehiclePage({
                   <div className="px-6 text-center">
                     <CarFront className="mx-auto size-11 text-[#a47d2f]" />
 
-                    <h1 className="mt-4 font-heading text-3xl font-semibold capitalize text-[#073b30]">
+                    <h1 className="mt-4 font-heading text-3xl font-semibold capitalize text-[#0B1726]">
                       {vehicle.brand} {vehicle.model}
                     </h1>
 
@@ -300,7 +300,7 @@ export default async function VehiclePage({
                   {galleryImages.map((image, index) => (
                     <div
                       key={image.id}
-                      className="relative aspect-[4/3] w-[42%] shrink-0 snap-start overflow-hidden rounded-[16px] bg-[#ded4c4] sm:w-[28%] lg:w-[23%]"
+                      className="relative aspect-[4/3] w-[42%] shrink-0 snap-start overflow-hidden rounded-[16px] bg-[#E4DDD2] sm:w-[28%] lg:w-[23%]"
                     >
                       <img
                         src={image.url}
@@ -334,11 +334,11 @@ export default async function VehiclePage({
                   About the vehicle
                 </p>
 
-                <h2 className="mt-2 font-heading text-2xl font-semibold text-[#073b30] sm:text-3xl">
+                <h2 className="mt-2 font-heading text-2xl font-semibold text-[#0B1726] sm:text-3xl">
                   Comfort prepared for Marrakech
                 </h2>
 
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-[#596b65] sm:text-base">
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-[#66727D] sm:text-base">
                   {vehicle.descriptionEn ??
                     `A comfortable and refined vehicle prepared for Marrakech city journeys, airport transfers and private escapes.`}
                 </p>
@@ -353,7 +353,7 @@ export default async function VehiclePage({
                       key={specification.label}
                       className="flex min-h-[92px] items-center gap-3 rounded-[18px] border border-[#ded2bf] bg-white p-4"
                     >
-                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#073b30] text-[#dfbe72]">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0B1726] text-[#dfbe72]">
                         <Icon className="size-5" />
                       </span>
 
@@ -362,7 +362,7 @@ export default async function VehiclePage({
                           {specification.label}
                         </p>
 
-                        <p className="mt-1 truncate text-sm font-bold text-[#073b30] sm:text-base">
+                        <p className="mt-1 truncate text-sm font-bold text-[#0B1726] sm:text-base">
                           {specification.value}
                         </p>
                       </div>
@@ -376,16 +376,16 @@ export default async function VehiclePage({
           <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(350px,0.8fr)]">
             <section className="overflow-hidden rounded-[22px] border border-[#ded2bf] bg-white">
               <div className="flex items-center gap-4 border-b border-[#e6dccd] bg-[#fbf7f0] p-5 sm:p-6">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#073b30] text-[#dfbe72]">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#0B1726] text-[#dfbe72]">
                   <ShieldCheck className="size-5" />
                 </span>
 
                 <div>
-                  <h2 className="font-heading text-2xl font-semibold text-[#073b30]">
+                  <h2 className="font-heading text-2xl font-semibold text-[#0B1726]">
                     Rental conditions
                   </h2>
 
-                  <p className="text-sm text-[#697972]">
+                  <p className="text-sm text-[#74808A]">
                     The essential terms for this vehicle.
                   </p>
                 </div>
@@ -402,7 +402,7 @@ export default async function VehiclePage({
                         {condition.label}
                       </dt>
 
-                      <dd className="text-right text-sm font-bold text-[#073b30]">
+                      <dd className="text-right text-sm font-bold text-[#0B1726]">
                         {condition.value}
                       </dd>
                     </div>
@@ -410,7 +410,7 @@ export default async function VehiclePage({
                 </dl>
               ) : (
                 <div className="p-5 sm:p-6">
-                  <p className="text-sm leading-7 text-[#596b65]">
+                  <p className="text-sm leading-7 text-[#66727D]">
                     Full rental conditions will be shared before
                     confirmation. Nothing is charged through this website.
                   </p>
@@ -423,15 +423,15 @@ export default async function VehiclePage({
                     Insurance information
                   </p>
 
-                  <p className="mt-2 text-sm leading-7 text-[#596b65]">
+                  <p className="mt-2 text-sm leading-7 text-[#66727D]">
                     {policy.insuranceDetails}
                   </p>
                 </div>
               )}
             </section>
 
-            <section className="rounded-[22px] bg-[#073b30] p-6 text-white sm:p-7">
-              <span className="flex size-12 items-center justify-center rounded-full bg-[#d6af58] text-[#073b30]">
+            <section className="rounded-[22px] bg-[#0B1726] p-6 text-white sm:p-7">
+              <span className="flex size-12 items-center justify-center rounded-full bg-[#d6af58] text-[#0B1726]">
                 <MapPin className="size-5" />
               </span>
 
