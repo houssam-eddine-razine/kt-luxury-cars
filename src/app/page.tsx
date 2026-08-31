@@ -380,7 +380,7 @@ export default async function HomePage() {
                   href={whatsapp}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-7 inline-flex min-h-14 items-center gap-3 rounded-[10px] bg-[#128c5a] px-8 text-sm font-bold text-white"
+                  className="mt-7 inline-flex min-h-14 items-center gap-3rounded-[10px] bg-[#128c5a] px-8 text-sm font-bold text-white"
                 >
                   <MessageCircle className="size-5" />
                   Request availability
@@ -401,10 +401,6 @@ export default async function HomePage() {
                     vehicle.images.find(
                       (image) => image.isCover,
                     ) ?? vehicle.images[0];
-
-                  const message = encodeURIComponent(
-                    `Hello KT Luxury Cars, I am interested in the ${vehicle.brand} ${vehicle.model}. Please confirm its availability, exact price and delivery options.`,
-                  );
 
                   const singleVehicle = vehicles.length === 1;
 
@@ -528,18 +524,16 @@ export default async function HomePage() {
                           ))}
                         </div>
 
-                        <a
-                          href={`https://wa.me/${phone}?text=${message}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <Link
+                          href={`/vehicles/${vehicle.slug}`}
                           className="group/link mt-7 flex min-h-16 items-center justify-between rounded-[10px] bg-[#073b30] px-6 text-sm font-bold text-white transition hover:bg-[#0b4b3d]"
                         >
-                          Check availability
+                          View vehicle details
 
                           <span className="flex size-11 items-center justify-center rounded-full bg-[#c8a45d] text-[#073b30]">
                             <ArrowRight className="size-5 transition-transform group-hover/link:translate-x-1" />
                           </span>
-                        </a>
+                        </Link>
                       </div>
                     </article>
                   );
