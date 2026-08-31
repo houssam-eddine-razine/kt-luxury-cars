@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { ImageManager } from "./image-manager";
 import { prisma } from "@/lib/prisma";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -28,13 +29,25 @@ export default async function EditVehiclePage({
     where: {
       id,
     },
+    include: {
+      images: {
+        orderBy: {
+          position: "asc",
+        },
+      },
+    },
   });
 
   if (!vehicle) {
     notFound();
   }
 
-  const updateVehicleAction = updateVehicle.bind(null, vehicle.id);
+  const updateVehicleAction = updateVehicle.bind(
+    null,
+    vehicle.id,
+  );
+
+  const vehicleName = `${vehicle.brand} ${vehicle.model}`;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -56,14 +69,36 @@ export default async function EditVehiclePage({
           </p>
 
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Edit {vehicle.brand} {vehicle.model}
+            Edit {vehicleName}
           </h1>
 
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-            Update its specifications, pricing and website visibility.
+            Update its photos, specifications, pricing and website
+            visibility.
           </p>
         </div>
       </div>
+
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <CardTitle>Vehicle gallery</CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          <ImageManager
+            vehicleId={vehicle.id}
+            vehicleName={vehicleName}
+            images={vehicle.images.map((image) => ({
+              id: image.id,
+              url: image.url,
+              storagePath: image.storagePath,
+              altText: image.altText,
+              position: image.position,
+              isCover: image.isCover,
+            }))}
+          />
+        </CardContent>
+      </Card>
 
       <Card className="overflow-hidden">
         <CardHeader>
