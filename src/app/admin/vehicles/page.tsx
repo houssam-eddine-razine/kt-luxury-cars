@@ -62,7 +62,56 @@ const formatLabel = (value: string) =>
   value
     .toLowerCase()
     .replaceAll("_", " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+    .replace(/\b\w/g, (character) =>
+      character.toUpperCase(),
+    );
+
+type VehicleThumbnailProps = {
+  imageUrl?: string;
+  vehicleName: string;
+  mobile?: boolean;
+};
+
+function VehicleThumbnail({
+  imageUrl,
+  vehicleName,
+  mobile = false,
+}: VehicleThumbnailProps) {
+  if (imageUrl) {
+    return (
+      <div
+        role="img"
+        aria-label={`${vehicleName} cover image`}
+        className={
+          mobile
+            ? "aspect-[16/10] w-full bg-cover bg-center"
+            : "size-14 shrink-0 rounded-lg bg-cover bg-center shadow-sm"
+        }
+        style={{
+          backgroundImage: `url(${JSON.stringify(imageUrl)})`,
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={
+        mobile
+          ? "flex aspect-[16/10] w-full items-center justify-center bg-muted/60"
+          : "flex size-14 shrink-0 items-center justify-center rounded-lg bg-muted"
+      }
+    >
+      <Car
+        className={
+          mobile
+            ? "size-10 text-muted-foreground/60"
+            : "size-5 text-muted-foreground"
+        }
+      />
+    </div>
+  );
+}
 
 export default async function VehiclesPage() {
   const vehicles = await prisma.vehicle.findMany({
@@ -71,9 +120,14 @@ export default async function VehiclesPage() {
     },
     include: {
       images: {
-        where: {
-          isCover: true,
-        },
+        orderBy: [
+          {
+            isCover: "desc",
+          },
+          {
+            position: "asc",
+          },
+        ],
         take: 1,
       },
     },
@@ -240,11 +294,13 @@ export default async function VehiclesPage() {
                     <TableHead className="pl-6">
                       Vehicle
                     </TableHead>
+
                     <TableHead>Registration</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Daily price</TableHead>
                     <TableHead>Website</TableHead>
+
                     <TableHead className="pr-6 text-right">
                       Actions
                     </TableHead>
@@ -256,18 +312,23 @@ export default async function VehiclesPage() {
                     const vehicleName =
                       `${vehicle.brand} ${vehicle.model}`;
 
-                    const deleteAction = deleteVehicle.bind(
-                      null,
-                      vehicle.id,
-                    );
+                    const coverImage =
+                      vehicle.images[0]?.url;
+
+                    const deleteAction =
+                      deleteVehicle.bind(
+                        null,
+                        vehicle.id,
+                      );
 
                     return (
                       <TableRow key={vehicle.id}>
                         <TableCell className="pl-6">
                           <div className="flex items-center gap-3">
-                            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted">
-                              <Car className="size-5 text-muted-foreground" />
-                            </div>
+                            <VehicleThumbnail
+                              imageUrl={coverImage}
+                              vehicleName={vehicleName}
+                            />
 
                             <div className="min-w-0">
                               <p className="truncate font-medium">
@@ -313,7 +374,9 @@ export default async function VehiclesPage() {
                                 : "secondary"
                             }
                           >
-                            {vehicle.visible ? "Visible" : "Hidden"}
+                            {vehicle.visible
+                              ? "Visible"
+                              : "Hidden"}
                           </Badge>
                         </TableCell>
 
@@ -346,16 +409,23 @@ export default async function VehiclesPage() {
               const vehicleName =
                 `${vehicle.brand} ${vehicle.model}`;
 
+              const coverImage = vehicle.images[0]?.url;
+
               const deleteAction = deleteVehicle.bind(
                 null,
                 vehicle.id,
               );
 
               return (
-                <Card key={vehicle.id} className="overflow-hidden">
-                  <div className="flex min-h-32 items-center justify-center bg-muted/60">
-                    <Car className="size-10 text-muted-foreground/60" />
-                  </div>
+                <Card
+                  key={vehicle.id}
+                  className="overflow-hidden"
+                >
+                  <VehicleThumbnail
+                    imageUrl={coverImage}
+                    vehicleName={vehicleName}
+                    mobile
+                  />
 
                   <CardContent className="space-y-5 p-5">
                     <div className="flex items-start justify-between gap-3">
@@ -388,13 +458,17 @@ export default async function VehiclesPage() {
 
                       <div className="flex items-center gap-2 text-sm">
                         <Settings2 className="size-4 text-muted-foreground" />
+
                         <span>
-                          {formatLabel(vehicle.transmission)}
+                          {formatLabel(
+                            vehicle.transmission,
+                          )}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2 text-sm">
                         <Fuel className="size-4 text-muted-foreground" />
+
                         <span>
                           {formatLabel(vehicle.fuelType)}
                         </span>
@@ -402,6 +476,7 @@ export default async function VehiclesPage() {
 
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="size-4 text-muted-foreground" />
+
                         <span>{vehicle.seats} seats</span>
                       </div>
                     </div>
@@ -424,7 +499,9 @@ export default async function VehiclesPage() {
                             : "secondary"
                         }
                       >
-                        {vehicle.visible ? "Visible" : "Hidden"}
+                        {vehicle.visible
+                          ? "Visible"
+                          : "Hidden"}
                       </Badge>
                     </div>
 
