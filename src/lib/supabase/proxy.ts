@@ -1,5 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import {
+  NextResponse,
+  type NextRequest,
+} from "next/server";
 
 function copyCookies(
   source: NextResponse,
@@ -12,14 +15,20 @@ function copyCookies(
   return destination;
 }
 
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
-    request,
-  });
+export async function updateSession(
+  request: NextRequest,
+  initialResponse?: NextResponse,
+) {
+  const response =
+    initialResponse ??
+    NextResponse.next({
+      request,
+    });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    process.env
+      .NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll() {
@@ -27,31 +36,39 @@ export async function updateSession(request: NextRequest) {
         },
 
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value);
-          });
+          cookiesToSet.forEach(
+            ({ name, value, options }) => {
+              request.cookies.set(name, value);
 
-          response = NextResponse.next({
-            request,
-          });
-
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
+              response.cookies.set(
+                name,
+                value,
+                options,
+              );
+            },
+          );
         },
       },
     },
   );
 
-  const { data, error } = await supabase.auth.getClaims();
+  const { data, error } =
+    await supabase.auth.getClaims();
 
   const claims = error ? null : data?.claims;
   const pathname = request.nextUrl.pathname;
 
-  const isAdminRoute = pathname.startsWith("/admin");
-  const isLoginPage = pathname === "/admin/login";
+  const isAdminRoute =
+    pathname.startsWith("/admin");
 
-  if (isAdminRoute && !isLoginPage && !claims) {
+  const isLoginPage =
+    pathname === "/admin/login";
+
+  if (
+    isAdminRoute &&
+    !isLoginPage &&
+    !claims
+  ) {
     const loginUrl = request.nextUrl.clone();
 
     loginUrl.pathname = "/admin/login";
