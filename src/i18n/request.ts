@@ -7,6 +7,7 @@ export default getRequestConfig(
   async ({ requestLocale }) => {
     const requestedLocale = await requestLocale;
 
+
     const locale = hasLocale(
       routing.locales,
       requestedLocale,
@@ -24,6 +25,12 @@ export default getRequestConfig(
       )
     ).default;
 
+    const vehicleDetailMessages = (
+        await import(
+            `../../messages/vehicle-detail/${locale}.json`
+        )
+    ).default;
+
     const vehicleMessages = (
       await import(
         `../../messages/vehicle/${locale}.json`
@@ -36,7 +43,8 @@ export default getRequestConfig(
         ...baseMessages,
         ...homeMessages,
         ...vehicleMessages,
-      },
+        ...vehicleDetailMessages,
+    },
     };
   },
 );
