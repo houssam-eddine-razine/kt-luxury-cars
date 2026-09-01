@@ -7,6 +7,8 @@ import {
   Geist_Mono,
 } from "next/font/google";
 
+import { BusinessStructuredData } from "@/components/seo/structured-data";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -94,14 +96,17 @@ export default async function RootLayout({
   children: ReactNode;
 }) {
   const locale = await getLocale();
+  const language = locale === "fr" ? "fr" : "en";
 
   return (
     <html
-      lang={locale}
+      lang={language}
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <BusinessStructuredData locale={language} />
+
         {children}
       </body>
     </html>
