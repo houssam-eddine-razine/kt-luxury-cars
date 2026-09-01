@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslations } from "next-intl";
 
 type CounterProps = {
   value: number;
@@ -22,9 +23,14 @@ function Counter({
   value,
   suffix = "",
 }: CounterProps) {
-  const elementRef = useRef<HTMLSpanElement>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const [displayedValue, setDisplayedValue] = useState(0);
+  const elementRef =
+    useRef<HTMLSpanElement>(null);
+
+  const animationFrameRef =
+    useRef<number | null>(null);
+
+  const [displayedValue, setDisplayedValue] =
+    useState(0);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -33,18 +39,24 @@ function Counter({
       return;
     }
 
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const prefersReducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
 
     if (prefersReducedMotion) {
-      animationFrameRef.current = requestAnimationFrame(() => {
-        setDisplayedValue(value);
-      });
+      animationFrameRef.current =
+        requestAnimationFrame(() => {
+          setDisplayedValue(value);
+        });
 
       return () => {
-        if (animationFrameRef.current !== null) {
-          cancelAnimationFrame(animationFrameRef.current);
+        if (
+          animationFrameRef.current !== null
+        ) {
+          cancelAnimationFrame(
+            animationFrameRef.current,
+          );
         }
       };
     }
@@ -56,11 +68,12 @@ function Counter({
         }
 
         const startTime = performance.now();
-        const duration = 2400;
+        const duration = 2200;
 
         function animate(currentTime: number) {
           const progress = Math.min(
-            (currentTime - startTime) / duration,
+            (currentTime - startTime) /
+              duration,
             1,
           );
 
@@ -92,8 +105,12 @@ function Counter({
     return () => {
       observer.disconnect();
 
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (
+        animationFrameRef.current !== null
+      ) {
+        cancelAnimationFrame(
+          animationFrameRef.current,
+        );
       }
     };
   }, [value]);
@@ -128,7 +145,7 @@ function StatisticCard({
   return (
     <article className="min-h-[156px] rounded-[20px] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-sm sm:min-h-[175px] sm:p-6">
       <div className="flex items-start justify-between gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#d3af60]/15 text-[#e2c676] sm:size-11">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#D3AF60]/15 text-[#E2C676] sm:size-11">
           <Icon className="size-5" />
         </span>
 
@@ -161,19 +178,22 @@ type TrustStatsProps = {
 export function TrustStats({
   vehicleCount,
 }: TrustStatsProps) {
+  const translations =
+    useTranslations("Stats");
+
   return (
     <section
-      aria-label="KT Luxury Cars statistics"
+      aria-label={translations("title")}
       className="bg-[#0B1726] px-4 py-12 text-white sm:px-8 sm:py-16 lg:px-12"
     >
       <div className="mx-auto max-w-[1400px]">
         <div className="mx-auto mb-8 max-w-2xl text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#d3af60]">
-            Trusted locally
+          <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#D3AF60] sm:text-base sm:tracking-[0.2em]">
+            {translations("eyebrow")}
           </p>
 
           <h2 className="mt-3 font-heading text-3xl font-semibold sm:text-4xl">
-            A clearer way to rent in Marrakech.
+            {translations("title")}
           </h2>
         </div>
 
@@ -181,30 +201,48 @@ export function TrustStats({
           <StatisticCard
             icon={CarFront}
             number={vehicleCount}
-            title="Cars available"
-            description="Current online selection"
+            title={translations(
+              "carsAvailable",
+            )}
+            description={translations(
+              "carsDescription",
+            )}
           />
 
           <StatisticCard
             icon={Users}
             number={100}
             suffix="+"
-            title="Satisfied customers"
-            description="Customers already served"
+            title={translations("customers")}
+            description={translations(
+              "customersDescription",
+            )}
           />
 
           <StatisticCard
             icon={MapPin}
-            fixedValue="Local"
-            title="Marrakech service"
-            description="Airport, hotel, riad or villa"
+            fixedValue={translations(
+              "localValue",
+            )}
+            title={translations(
+              "marrakechService",
+            )}
+            description={translations(
+              "marrakechDescription",
+            )}
           />
 
           <StatisticCard
             icon={Headphones}
-            fixedValue="Direct"
-            title="Personal assistance"
-            description="Speak directly with our team"
+            fixedValue={translations(
+              "directValue",
+            )}
+            title={translations(
+              "personalAssistance",
+            )}
+            description={translations(
+              "assistanceDescription",
+            )}
           />
         </div>
       </div>
