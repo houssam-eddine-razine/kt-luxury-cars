@@ -24,11 +24,18 @@ export default getRequestConfig(
       )
     ).default;
 
+    const vehicleMessages = (
+      await import(
+        `../../messages/vehicle/${locale}.json`
+      )
+    ).default;
+
     return {
       locale,
       messages: {
         ...baseMessages,
         ...homeMessages,
+        ...vehicleMessages,
       },
     };
   },

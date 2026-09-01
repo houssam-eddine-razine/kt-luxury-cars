@@ -1,18 +1,23 @@
-﻿import Link from "next/link";
-import {
+﻿import {
   ArrowUpRight,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const whatsappUrl =
-  `https://wa.me/212619019549?text=${encodeURIComponent(
-    "Hello KT Luxury Cars, I would like to rent a vehicle in Marrakech.",
-  )}`;
+import { Link } from "@/i18n/navigation";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const translations =
+    await getTranslations("Footer");
+
+  const whatsappUrl =
+    `https://wa.me/212619019549?text=${encodeURIComponent(
+      translations("whatsappMessage"),
+    )}`;
+
   return (
     <footer
       id="contact"
@@ -22,11 +27,11 @@ export function SiteFooter() {
         <div className="grid gap-12 border-b border-white/10 pb-14 md:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
-              <span className="font-heading text-5xl font-semibold leading-none text-[#d3af60]">
+              <span className="font-heading text-5xl font-semibold leading-none text-[#D3AF60]">
                 KT
               </span>
 
-              <span className="h-10 w-px bg-[#c8a45d]/35" />
+              <span className="h-10 w-px bg-[#C8A45D]/35" />
 
               <span>
                 <span className="block text-xs font-bold tracking-[0.22em]">
@@ -40,61 +45,61 @@ export function SiteFooter() {
             </div>
 
             <p className="mt-6 max-w-sm text-sm leading-7 text-white/55">
-              Private vehicles, personal delivery and local
-              assistance for your journey through Marrakech and
-              beyond.
+              {translations("description")}
             </p>
 
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-7 inline-flex min-h-13 items-center gap-3 rounded-[10px] bg-[#128c5a] px-6 text-sm font-bold text-white transition hover:bg-[#0f774c]"
+              className="mt-7 inline-flex min-h-13 items-center gap-3 rounded-[10px] bg-[#128C5A] px-6 text-sm font-bold text-white transition hover:bg-[#0F774C]"
             >
               <MessageCircle className="size-5" />
-              WhatsApp concierge
+              {translations(
+                "whatsappConcierge",
+              )}
             </a>
           </div>
 
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-[#d3af60]">
-              Explore
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#D3AF60]">
+              {translations("explore")}
             </h3>
 
             <nav className="mt-6 flex flex-col gap-4 text-sm text-white/60">
               <Link
-                href="/#collection"
+                href="/vehicles"
                 className="transition hover:text-white"
               >
-                Available vehicles
+                {translations("vehicles")}
               </Link>
 
               <Link
                 href="/#services"
                 className="transition hover:text-white"
               >
-                Our services
+                {translations("services")}
               </Link>
 
               <Link
                 href="/#why-kt"
                 className="transition hover:text-white"
               >
-                Why KT
+                {translations("whyKt")}
               </Link>
 
               <Link
                 href="/#contact"
                 className="transition hover:text-white"
               >
-                Contact
+                {translations("contact")}
               </Link>
             </nav>
           </div>
 
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-[#d3af60]">
-              Contact
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#D3AF60]">
+              {translations("contact")}
             </h3>
 
             <div className="mt-6 space-y-5 text-sm text-white/60">
@@ -102,12 +107,13 @@ export function SiteFooter() {
                 href="tel:+212619019549"
                 className="flex items-start gap-3 transition hover:text-white"
               >
-                <Phone className="mt-0.5 size-4 shrink-0 text-[#d3af60]" />
+                <Phone className="mt-0.5 size-4 shrink-0 text-[#D3AF60]" />
 
                 <span>
                   <span className="block text-xs text-white/35">
-                    Telephone
+                    {translations("telephone")}
                   </span>
+
                   <span className="mt-1 block">
                     +212 619 019 549
                   </span>
@@ -118,12 +124,13 @@ export function SiteFooter() {
                 href="mailto:kettaoui.cars26@gmail.com"
                 className="flex items-start gap-3 transition hover:text-white"
               >
-                <Mail className="mt-0.5 size-4 shrink-0 text-[#d3af60]" />
+                <Mail className="mt-0.5 size-4 shrink-0 text-[#D3AF60]" />
 
                 <span>
                   <span className="block text-xs text-white/35">
-                    Email
+                    {translations("email")}
                   </span>
+
                   <span className="mt-1 block break-all">
                     kettaoui.cars26@gmail.com
                   </span>
@@ -131,14 +138,17 @@ export function SiteFooter() {
               </a>
 
               <div className="flex items-start gap-3">
-                <MapPin className="mt-0.5 size-4 shrink-0 text-[#d3af60]" />
+                <MapPin className="mt-0.5 size-4 shrink-0 text-[#D3AF60]" />
 
                 <span>
                   <span className="block text-xs text-white/35">
-                    Location
+                    {translations("location")}
                   </span>
+
                   <span className="mt-1 block">
-                    Marrakech, Morocco
+                    {translations(
+                      "marrakechMorocco",
+                    )}
                   </span>
                 </span>
               </div>
@@ -146,34 +156,41 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-[#d3af60]">
-              Reservation assistance
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#D3AF60]">
+              {translations(
+                "reservationAssistance",
+              )}
             </h3>
 
             <p className="mt-6 text-sm leading-7 text-white/55">
-              Send us your dates, vehicle category and delivery
-              location. We will reply with availability and exact
-              rental conditions.
+              {translations(
+                "reservationDescription",
+              )}
             </p>
 
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-6 flex min-h-13 w-full items-center justify-between rounded-[10px] border border-[#c8a45d]/45 px-5 text-sm font-bold text-white transition hover:bg-[#c8a45d] hover:text-[#0B1726]"
+              className="mt-6 flex min-h-13 w-full items-center justify-between rounded-[10px] border border-[#C8A45D]/45 px-5 text-sm font-bold text-white transition hover:bg-[#C8A45D] hover:text-[#0B1726]"
             >
-              Start your request
+              {translations("startRequest")}
               <ArrowUpRight className="size-5" />
             </a>
           </div>
         </div>
 
         <div className="flex flex-col gap-4 pt-7 text-xs text-white/35 sm:flex-row sm:items-center sm:justify-between">
-          <p>Â© 2026 KT Luxury Cars. All rights reserved.</p>
+          <p>{translations("rights")}</p>
 
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <span>Marrakech Â· Morocco</span>
-            <span>Private car rental</span>
+            <span>
+              {translations("locationShort")}
+            </span>
+
+            <span>
+              {translations("privateRental")}
+            </span>
           </div>
         </div>
       </div>

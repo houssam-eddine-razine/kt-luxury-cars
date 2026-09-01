@@ -277,7 +277,7 @@ export function ReservationPanel({
         <button
           type="button"
           onClick={requestVehicle}
-          className="group flex min-h-16 w-full items-center justify-between rounded-[14px] bg-[#128C5A] px-5 text-sm font-bold text-white shadow-[0_12px_26px_rgba(18,140,90,0.24)] transition hover:-translate-y-0.5 hover:bg-[#0F774C] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#128C5A]/25 active:translate-y-0"
+          className="group flex min-h-16 w-full items-center justify-between rounded-[14px] bg-[#128C5A] px-5 text-sm font-bold text-white shadow-[0_12px_26px_rgba(18,140,90,0.24)] transition hover:-translate-y-0.5 hover:bg-[#0F774C]"
         >
           <span className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-full bg-white/15">
