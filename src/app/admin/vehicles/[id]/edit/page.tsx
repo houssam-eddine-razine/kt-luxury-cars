@@ -4,9 +4,11 @@ import {
   ArrowLeft,
   Camera,
   CheckCircle2,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { ImageManager } from "./image-manager";
+import { VehiclePolicySelector } from "./vehicle-policy-selector";
 import { prisma } from "@/lib/prisma";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -35,18 +37,39 @@ export default async function EditVehiclePage({
   const { id } = await params;
   const { created } = await searchParams;
 
-  const vehicle = await prisma.vehicle.findUnique({
-    where: {
-      id,
-    },
-    include: {
-      images: {
-        orderBy: {
-          position: "asc",
+  const [vehicle, policies] = await Promise.all([
+    prisma.vehicle.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        images: {
+          orderBy: {
+            position: "asc",
+          },
         },
       },
-    },
-  });
+    }),
+
+    prisma.rentalPolicy.findMany({
+      where: {
+        active: true,
+      },
+      orderBy: [
+        {
+          isDefault: "desc",
+        },
+        {
+          name: "asc",
+        },
+      ],
+      select: {
+        id: true,
+        name: true,
+        isDefault: true,
+      },
+    }),
+  ]);
 
   if (!vehicle) {
     notFound();
@@ -84,8 +107,8 @@ export default async function EditVehiclePage({
           </h1>
 
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-            Update its photographs, specifications, pricing and
-            website visibility.
+            Manage its photographs, rental policy, specifications,
+            pricing and website visibility.
           </p>
         </div>
       </div>
@@ -100,13 +123,40 @@ export default async function EditVehiclePage({
             </p>
 
             <p className="mt-1 text-sm leading-6">
-              Complete step 2 below by adding the vehicle
-              photographs. The first uploaded photograph will
-              automatically become the website cover.
+              Add the vehicle photographs below. You can also assign
+              different rental conditions or leave it on the
+              default policy.
             </p>
           </div>
         </div>
       )}
+
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <ClipboardCheck className="size-5" />
+            </span>
+
+            <div>
+              <CardTitle>Rental policy</CardTitle>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Choose the conditions shown on this vehicle’s public
+                page.
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <VehiclePolicySelector
+            vehicleId={vehicle.id}
+            currentPolicyId={vehicle.rentalPolicyId}
+            policies={policies}
+          />
+        </CardContent>
+      </Card>
 
       {newlyCreated && (
         <div className="grid gap-4 sm:grid-cols-2">
