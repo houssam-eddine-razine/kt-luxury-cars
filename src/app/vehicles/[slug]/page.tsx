@@ -433,14 +433,14 @@ export default async function VehiclePage({
             <div className="lg:sticky lg:top-24 lg:col-start-2 lg:row-span-2 lg:row-start-1">
               <ReservationPanel
                 vehicle={{
+                  id: vehicle.id,
                   brand: vehicle.brand,
                   model: vehicle.model,
                   trim: vehicle.trim,
-                  dailyPrice:
-                    vehicle.dailyPrice,
+                  dailyPrice: vehicle.dailyPrice,
                   deposit: vehicle.deposit,
                 }}
-              />
+                 />
             </div>
 
             <div className="space-y-5 lg:col-start-1 lg:row-start-2">

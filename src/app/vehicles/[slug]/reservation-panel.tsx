@@ -4,14 +4,24 @@ import {
   ArrowRight,
   CalendarDays,
   Check,
+  Loader2,
+  Mail,
   MapPin,
   MessageCircle,
+  Phone,
+  UserRound,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import {
+  useLocale,
+  useTranslations,
+} from "next-intl";
 import { useState } from "react";
+
+import { createReservationRequest } from "./reservation-actions";
 
 type ReservationPanelProps = {
   vehicle: {
+    id: string;
     brand: string;
     model: string;
     trim: string | null;
@@ -38,7 +48,7 @@ function formatPrice(value: number) {
 }
 
 const fieldClassName =
-  "min-h-14 w-full rounded-[12px] border border-[#D8CDBB] bg-[#F7F2E9] px-4 text-sm font-semibold text-[#0B1726] outline-none transition focus:border-[#A47D2F] focus:ring-4 focus:ring-[#C8A45D]/15";
+  "min-h-14 w-full rounded-[12px] border border-[#D8CDBB] bg-[#F7F2E9] px-4 text-sm font-semibold text-[#0B1726] outline-none transition placeholder:font-normal placeholder:text-[#929B9F] focus:border-[#A47D2F] focus:ring-4 focus:ring-[#C8A45D]/15";
 
 export function ReservationPanel({
   vehicle,
@@ -46,14 +56,29 @@ export function ReservationPanel({
   const translations =
     useTranslations("Reservation");
 
+  const currentLocale = useLocale();
+  const locale = currentLocale === "fr" ? "fr" : "en";
+
   const [today] = useState(getToday);
+
+  const [customerName, setCustomerName] =
+    useState("");
+
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+
   const [pickupDate, setPickupDate] =
     useState("");
+
   const [returnDate, setReturnDate] =
     useState("");
+
   const [location, setLocation] =
     useState("airport");
+
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] =
+    useState(false);
 
   const locations = [
     {
@@ -86,7 +111,21 @@ export function ReservationPanel({
     .filter(Boolean)
     .join(" ");
 
-  function requestVehicle() {
+  async function requestVehicle() {
+    if (submitting) {
+      return;
+    }
+
+    if (
+      customerName.trim().length < 2 ||
+      phone.replace(/\D/g, "").length < 8
+    ) {
+      setError(
+        translations("missingCustomerInformation"),
+      );
+      return;
+    }
+
     if (!pickupDate || !returnDate) {
       setError(translations("missingDates"));
       return;
@@ -98,47 +137,122 @@ export function ReservationPanel({
     }
 
     setError("");
+    setSubmitting(true);
 
-    const selectedLocation =
-      locations.find(
-        (item) => item.value === location,
-      )?.label ?? location;
-
-    const message = [
-      translations("messageGreeting"),
-      "",
-      translations("messageVehicle", {
-        vehicle: vehicleName,
-      }),
-      "",
-      translations("messagePickup", {
-        date: pickupDate,
-      }),
-      translations("messageReturn", {
-        date: returnDate,
-      }),
-      translations("messageLocation", {
-        location: selectedLocation,
-      }),
-      translations("messageRate", {
-        price: formatPrice(
-          vehicle.dailyPrice,
-        ),
-      }),
-      "",
-      translations("messageClosing"),
-    ].join("\n");
-
-    const whatsappUrl =
-      `https://wa.me/212619019549?text=${encodeURIComponent(
-        message,
-      )}`;
-
-    window.open(
-      whatsappUrl,
+    /*
+     * Open a blank window immediately so mobile browsers do not
+     * block WhatsApp after the database request finishes.
+     */
+    const whatsappWindow = window.open(
+      "about:blank",
       "_blank",
-      "noopener,noreferrer",
     );
+
+    if (whatsappWindow) {
+      whatsappWindow.opener = null;
+    }
+
+    try {
+      const result =
+        await createReservationRequest({
+          vehicleId: vehicle.id,
+          customerName,
+          phone,
+          email,
+          locale,
+          pickupDate,
+          returnDate,
+          deliveryLocation: location as
+            | "airport"
+            | "cityCentre"
+            | "trainStation"
+            | "hotelRiad"
+            | "privateVilla",
+          website: "",
+        });
+
+      if (!result.success) {
+        whatsappWindow?.close();
+
+        if (result.error === "INVALID_DATES") {
+          setError(translations("invalidDates"));
+          return;
+        }
+
+        if (
+          result.error === "VEHICLE_NOT_FOUND"
+        ) {
+          setError(
+            translations("vehicleUnavailable"),
+          );
+          return;
+        }
+
+        setError(translations("saveFailed"));
+        return;
+      }
+
+      const selectedLocation =
+        locations.find(
+          (item) => item.value === location,
+        )?.label ?? location;
+
+      const message = [
+        translations("messageGreeting"),
+        "",
+        translations("messageReference", {
+          reference: result.reference,
+        }),
+        translations("messageName", {
+          name: customerName.trim(),
+        }),
+        translations("messagePhone", {
+          phone: phone.trim(),
+        }),
+        "",
+        translations("messageVehicle", {
+          vehicle: vehicleName,
+        }),
+        "",
+        translations("messagePickup", {
+          date: pickupDate,
+        }),
+        translations("messageReturn", {
+          date: returnDate,
+        }),
+        translations("messageLocation", {
+          location: selectedLocation,
+        }),
+        translations("messageRate", {
+          price: formatPrice(
+            vehicle.dailyPrice,
+          ),
+        }),
+        "",
+        translations("messageClosing"),
+      ].join("\n");
+
+      const whatsappUrl =
+        `https://wa.me/212619019549?text=${encodeURIComponent(
+          message,
+        )}`;
+
+      if (whatsappWindow && !whatsappWindow.closed) {
+        whatsappWindow.location.replace(whatsappUrl);
+      } else {
+        window.location.assign(whatsappUrl);
+      }
+    } catch (requestError) {
+      console.error(
+        "Reservation request failed:",
+        requestError,
+      );
+
+      whatsappWindow?.close();
+      setError(translations("saveFailed"));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -186,6 +300,87 @@ export function ReservationPanel({
           </p>
         </div>
 
+        <div className="space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#8D6B2B]">
+            {translations("customerDetails")}
+          </p>
+
+          <label className="block">
+            <span className="sr-only">
+              {translations("fullName")}
+            </span>
+
+            <span className="relative block">
+              <UserRound className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#8D6B2B]" />
+
+              <input
+                type="text"
+                autoComplete="name"
+                value={customerName}
+                onChange={(event) => {
+                  setCustomerName(event.target.value);
+                  setError("");
+                }}
+                placeholder={translations(
+                  "fullNamePlaceholder",
+                )}
+                className={`${fieldClassName} pl-11`}
+              />
+            </span>
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <label className="block">
+              <span className="sr-only">
+                {translations("whatsappNumber")}
+              </span>
+
+              <span className="relative block">
+                <Phone className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#8D6B2B]" />
+
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(event) => {
+                    setPhone(event.target.value);
+                    setError("");
+                  }}
+                  placeholder={translations(
+                    "phonePlaceholder",
+                  )}
+                  className={`${fieldClassName} pl-11`}
+                />
+              </span>
+            </label>
+
+            <label className="block">
+              <span className="sr-only">
+                {translations("emailOptional")}
+              </span>
+
+              <span className="relative block">
+                <Mail className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#8D6B2B]" />
+
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    setError("");
+                  }}
+                  placeholder={translations(
+                    "emailPlaceholder",
+                  )}
+                  className={`${fieldClassName} pl-11`}
+                />
+              </span>
+            </label>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
           <label className="block">
             <span className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8D6B2B]">
@@ -231,6 +426,7 @@ export function ReservationPanel({
                 setReturnDate(
                   event.target.value,
                 );
+
                 setError("");
               }}
               className={`${fieldClassName} [color-scheme:light]`}
@@ -241,9 +437,7 @@ export function ReservationPanel({
         <label className="block">
           <span className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8D6B2B]">
             <MapPin className="size-4" />
-            {translations(
-              "deliveryLocation",
-            )}
+            {translations("deliveryLocation")}
           </span>
 
           <select
@@ -277,24 +471,27 @@ export function ReservationPanel({
         <button
           type="button"
           onClick={requestVehicle}
-          className="group flex min-h-16 w-full items-center justify-between rounded-[14px] bg-[#128C5A] px-5 text-sm font-bold text-white shadow-[0_12px_26px_rgba(18,140,90,0.24)] transition hover:-translate-y-0.5 hover:bg-[#0F774C] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#128C5A]/25 active:translate-y-0"
+          disabled={submitting}
+          className="group flex min-h-16 w-full items-center justify-between rounded-[14px] bg-[#128C5A] px-5 text-sm font-bold text-white shadow-[0_12px_26px_rgba(18,140,90,0.24)] transition hover:-translate-y-0.5 hover:bg-[#0F774C] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#128C5A]/25 active:translate-y-0 disabled:cursor-wait disabled:opacity-70"
         >
           <span className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-full bg-white/15">
-              <MessageCircle className="size-5" />
+              {submitting ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <MessageCircle className="size-5" />
+              )}
             </span>
 
             <span className="text-left">
               <span className="block">
-                {translations(
-                  "requestWhatsapp",
-                )}
+                {submitting
+                  ? translations("savingRequest")
+                  : translations("requestWhatsapp")}
               </span>
 
               <span className="mt-0.5 block text-[10px] font-medium text-white/70 sm:text-xs">
-                {translations(
-                  "personalConfirmation",
-                )}
+                {translations("personalConfirmation")}
               </span>
             </span>
           </span>
@@ -302,15 +499,15 @@ export function ReservationPanel({
           <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-1" />
         </button>
 
+        <p className="text-center text-[11px] leading-5 text-[#7D888E]">
+          {translations("privacyNote")}
+        </p>
+
         <div className="grid gap-3 border-t border-[#E8DFD2] pt-5 text-xs text-[#66727D] sm:grid-cols-3 lg:grid-cols-1">
           {[
             translations("noPayment"),
-            translations(
-              "availabilityConfirmed",
-            ),
-            translations(
-              "conditionsBeforeConfirmation",
-            ),
+            translations("availabilityConfirmed"),
+            translations("conditionsBeforeConfirmation"),
           ].map((item) => (
             <p
               key={item}

@@ -41,6 +41,14 @@ enum FuelPolicy {
   PREPURCHASE
 }
 
+enum ReservationStatus {
+  NEW
+  CONTACTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
 model Vehicle {
   id           String          @id @default(uuid()) @db.Uuid
   slug         String          @unique
@@ -54,7 +62,7 @@ model Vehicle {
   transmission Transmission
   fuelType     FuelType
 
-  seats   Int
+  seats   Int @default(5)
   doors   Int @default(5)
   luggage Int @default(2)
   mileage Int @default(0)
@@ -71,7 +79,8 @@ model Vehicle {
   visible  Boolean @default(true)
   featured Boolean @default(false)
 
-  images VehicleImage[]
+  images              VehicleImage[]
+  reservationRequests ReservationRequest[]
 
   rentalPolicyId String?       @db.Uuid
   rentalPolicy   RentalPolicy? @relation(fields: [rentalPolicyId], references: [id], onDelete: SetNull)
@@ -132,4 +141,36 @@ model RentalPolicy {
   updatedAt DateTime @updatedAt
 
   @@index([isDefault, active])
+}
+
+model ReservationRequest {
+  id        String            @id @default(uuid()) @db.Uuid
+  reference String            @unique
+  status    ReservationStatus @default(NEW)
+
+  customerName String
+  phone        String
+  email        String?
+
+  locale           String @default("en")
+  deliveryLocation String
+
+  pickupDate DateTime @db.Date
+  returnDate DateTime @db.Date
+
+  advertisedDailyRate Int
+
+  customerMessage String?
+  internalNotes   String?
+
+  vehicleId String  @db.Uuid
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([vehicleId])
+  @@index([pickupDate, returnDate])
+  @@index([phone])
 }
