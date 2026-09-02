@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CarFront,
   CircleDollarSign,
+  ClipboardCheck,
   Gauge,
   Globe,
   LogOut,
@@ -18,8 +19,21 @@ import {
 import { logout } from "@/app/admin/auth-actions";
 
 const navigation = [
-  { name: "Overview", href: "/admin", icon: Gauge },
-  { name: "Vehicles", href: "/admin/vehicles", icon: CarFront },
+  {
+    name: "Overview",
+    href: "/admin",
+    icon: Gauge,
+  },
+  {
+    name: "Vehicles",
+    href: "/admin/vehicles",
+    icon: CarFront,
+  },
+  {
+    name: "Rental policies",
+    href: "/admin/rental-policies",
+    icon: ClipboardCheck,
+  },
   {
     name: "Reservations",
     href: "/admin/reservations",
@@ -62,6 +76,7 @@ function LogoutButton() {
       className="flex w-full items-center gap-3 rounded-md px-4 py-3 text-sm text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
     >
       <LogOut className="size-5" />
+
       {pending ? "Signing out..." : "Sign out"}
     </button>
   );

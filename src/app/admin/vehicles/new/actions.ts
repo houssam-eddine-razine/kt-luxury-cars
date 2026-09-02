@@ -136,13 +136,20 @@ export async function createVehicle(
     };
   }
 
+  let vehicleId: string;
+
   try {
-    await prisma.vehicle.create({
+    const vehicle = await prisma.vehicle.create({
       data: {
         ...data,
         slug,
       },
+      select: {
+        id: true,
+      },
     });
+
+    vehicleId = vehicle.id;
   } catch (error) {
     console.error("Vehicle creation failed:", error);
 
@@ -154,7 +161,10 @@ export async function createVehicle(
 
   revalidatePath("/admin");
   revalidatePath("/admin/vehicles");
-  redirect("/admin/vehicles");
+
+  redirect(
+    `/admin/vehicles/${vehicleId}/edit?created=true`,
+  );
 }
 
 export async function updateVehicle(
@@ -245,6 +255,7 @@ export async function updateVehicle(
   revalidatePath("/admin");
   revalidatePath("/admin/vehicles");
   revalidatePath(`/admin/vehicles/${vehicleId}/edit`);
+
   redirect("/admin/vehicles");
 }
 
@@ -314,7 +325,7 @@ export async function deleteVehicle(vehicleId: string) {
 
     if (!data || data.length !== storagePaths.length) {
       console.error(
-        "Vehicle deletion stopped because not all Storage images were removed.",
+        "Vehicle deletion stopped because not all storage images were removed.",
         {
           expected: storagePaths.length,
           removed: data?.length ?? 0,
@@ -338,5 +349,6 @@ export async function deleteVehicle(vehicleId: string) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/vehicles");
+
   redirect("/admin/vehicles");
 }

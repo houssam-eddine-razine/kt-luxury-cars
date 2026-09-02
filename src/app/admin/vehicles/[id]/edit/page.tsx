@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+} from "lucide-react";
 
 import { ImageManager } from "./image-manager";
 import { prisma } from "@/lib/prisma";
@@ -18,12 +22,18 @@ type EditVehiclePageProps = {
   params: Promise<{
     id: string;
   }>;
+
+  searchParams: Promise<{
+    created?: string;
+  }>;
 };
 
 export default async function EditVehiclePage({
   params,
+  searchParams,
 }: EditVehiclePageProps) {
   const { id } = await params;
+  const { created } = await searchParams;
 
   const vehicle = await prisma.vehicle.findUnique({
     where: {
@@ -48,6 +58,7 @@ export default async function EditVehiclePage({
   );
 
   const vehicleName = `${vehicle.brand} ${vehicle.model}`;
+  const newlyCreated = created === "true";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -69,19 +80,79 @@ export default async function EditVehiclePage({
           </p>
 
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Edit {vehicleName}
+            {newlyCreated ? "Complete" : "Edit"} {vehicleName}
           </h1>
 
           <p className="mt-1 text-sm text-muted-foreground sm:text-base">
-            Update its photos, specifications, pricing and website
-            visibility.
+            Update its photographs, specifications, pricing and
+            website visibility.
           </p>
         </div>
       </div>
 
+      {newlyCreated && (
+        <div className="flex items-start gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-800">
+          <CheckCircle2 className="mt-0.5 size-6 shrink-0" />
+
+          <div>
+            <p className="font-semibold">
+              Vehicle information saved successfully
+            </p>
+
+            <p className="mt-1 text-sm leading-6">
+              Complete step 2 below by adding the vehicle
+              photographs. The first uploaded photograph will
+              automatically become the website cover.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {newlyCreated && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex items-start gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-semibold text-white">
+              ✓
+            </span>
+
+            <div>
+              <p className="font-semibold">
+                Vehicle information
+              </p>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Saved successfully.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4 rounded-xl border border-primary/30 bg-primary/5 p-5">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
+              2
+            </span>
+
+            <div>
+              <p className="font-semibold">
+                Vehicle photographs
+              </p>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add photographs and select the cover.
+              </p>
+            </div>
+
+            <Camera className="ml-auto size-5 text-primary" />
+          </div>
+        </div>
+      )}
+
       <Card className="overflow-hidden">
         <CardHeader>
-          <CardTitle>Vehicle gallery</CardTitle>
+          <CardTitle>
+            {newlyCreated
+              ? "Step 2 — Vehicle photographs"
+              : "Vehicle gallery"}
+          </CardTitle>
         </CardHeader>
 
         <CardContent>
