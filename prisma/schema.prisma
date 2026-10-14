@@ -46,7 +46,79 @@ enum ReservationStatus {
   CONTACTED
   CONFIRMED
   COMPLETED
+  DECLINED
   CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum MaintenanceType {
+  OIL_CHANGE
+  BRAKE_PADS
+  ADBLUE
+  TIRES
+  TECHNICAL_INSPECTION
+  INSURANCE
+  REPAIR
+  CLEANING
+  OTHER
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  VEHICLE_FINANCE
+  INSURANCE
+  REPAIR
+  PARTS
+  FUEL
+  ADBLUE
+  CLEANING
+  TAXES
+  ACCOUNTING
+  MARKETING
+  SALARY
+  RENT
+  UTILITIES
+  OTHER
+}
+
+enum ExpenseStatus {
+  PLANNED
+  PAID
+  CANCELLED
+  CORRECTED
+}
+
+enum ExpenseSource {
+  MANUAL
+  MAINTENANCE
+  CORRECTION
+}
+
+enum RecurrenceFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
 }
 
 model Vehicle {
@@ -62,7 +134,7 @@ model Vehicle {
   transmission Transmission
   fuelType     FuelType
 
-  seats   Int @default(5)
+  seats   Int
   doors   Int @default(5)
   luggage Int @default(2)
   mileage Int @default(0)
@@ -79,11 +151,15 @@ model Vehicle {
   visible  Boolean @default(true)
   featured Boolean @default(false)
 
-  images              VehicleImage[]
-  reservationRequests ReservationRequest[]
+  images VehicleImage[]
 
   rentalPolicyId String?       @db.Uuid
   rentalPolicy   RentalPolicy? @relation(fields: [rentalPolicyId], references: [id], onDelete: SetNull)
+
+  reservationRequests ReservationRequest[]
+  bookings            Booking[]
+  maintenanceEvents   MaintenanceEvent[]
+  expenses            Expense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,7 +228,7 @@ model ReservationRequest {
   phone        String
   email        String?
 
-  locale           String @default("en")
+  locale           String @default("fr")
   deliveryLocation String
 
   pickupDate DateTime @db.Date
@@ -166,6 +242,8 @@ model ReservationRequest {
   vehicleId String  @db.Uuid
   vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
 
+  booking Booking?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -173,4 +251,129 @@ model ReservationRequest {
   @@index([vehicleId])
   @@index([pickupDate, returnDate])
   @@index([phone])
+}
+
+model Booking {
+  id        String        @id @default(uuid()) @db.Uuid
+  reference String        @unique
+  status    BookingStatus @default(CONFIRMED)
+
+  customerName String
+  phone        String
+  email        String?
+
+  pickupDate DateTime @db.Date
+  returnDate DateTime @db.Date
+
+  pickupTime String?
+  returnTime String?
+
+  pickupLocation String
+  returnLocation String?
+
+  dailyRate  Int
+  totalPrice Int
+
+  depositRequired Int?
+  depositPaid     Int  @default(0)
+  amountPaid      Int  @default(0)
+
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  internalNotes String?
+
+  vehicleId String  @db.Uuid
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+
+  reservationRequestId String?             @unique @db.Uuid
+  reservationRequest   ReservationRequest? @relation(fields: [reservationRequestId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([vehicleId, pickupDate, returnDate])
+  @@index([status, pickupDate])
+  @@index([status, returnDate])
+  @@index([paymentStatus])
+  @@index([phone])
+}
+
+model MaintenanceEvent {
+  id     String            @id @default(uuid()) @db.Uuid
+  type   MaintenanceType
+  status MaintenanceStatus @default(SCHEDULED)
+
+  scheduledDate DateTime  @db.Date
+  endDate       DateTime? @db.Date
+  completedDate DateTime? @db.Date
+
+  mileageAtService   Int?
+  nextServiceMileage Int?
+  nextDueDate        DateTime? @db.Date
+
+  cost   Int?
+  garage String?
+  notes  String?
+
+  blocksAvailability Boolean @default(false)
+
+  vehicleId String  @db.Uuid
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  expense Expense?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([vehicleId, scheduledDate])
+  @@index([status, scheduledDate])
+  @@index([type])
+  @@index([nextDueDate])
+  @@index([nextServiceMileage])
+}
+
+model Expense {
+  id       String          @id @default(uuid()) @db.Uuid
+  title    String
+  category ExpenseCategory
+  status   ExpenseStatus   @default(PAID)
+  source   ExpenseSource   @default(MANUAL)
+
+  amount Int
+
+  expenseDate DateTime  @db.Date
+  dueDate     DateTime? @db.Date
+  paidDate    DateTime? @db.Date
+
+  supplier  String?
+  reference String?
+  notes     String?
+
+  recurring           Boolean              @default(false)
+  recurrenceFrequency RecurrenceFrequency?
+  recurrenceSeriesId  String?              @db.Uuid
+  nextDueDate         DateTime?            @db.Date
+
+  vehicleId String?  @db.Uuid
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  maintenanceEventId String?           @unique @db.Uuid
+  maintenanceEvent   MaintenanceEvent? @relation(fields: [maintenanceEventId], references: [id], onDelete: SetNull)
+
+  correctionOfId String?   @db.Uuid
+  correctionOf   Expense?  @relation("ExpenseCorrections", fields: [correctionOfId], references: [id], onDelete: SetNull)
+  corrections    Expense[] @relation("ExpenseCorrections")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([recurrenceSeriesId, expenseDate])
+  @@index([status, expenseDate])
+  @@index([category])
+  @@index([vehicleId])
+  @@index([dueDate])
+  @@index([nextDueDate])
+  @@index([recurring, nextDueDate])
+  @@index([recurrenceSeriesId])
+  @@index([correctionOfId])
 }

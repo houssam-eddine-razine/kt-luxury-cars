@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 const reservationStatuses = [
   "NEW",
   "CONTACTED",
+  "DECLINED",
   "CONFIRMED",
   "COMPLETED",
   "CANCELLED",
@@ -45,6 +46,7 @@ const statusLabels: Record<
 > = {
   NEW: "New request",
   CONTACTED: "Contacted",
+  DECLINED: "Declined",
   CONFIRMED: "Confirmed",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
@@ -56,6 +58,7 @@ const statusStyles: Record<
 > = {
   NEW: "bg-purple-100 text-purple-700",
   CONTACTED: "bg-blue-100 text-blue-700",
+  DECLINED: "bg-red-50 text-red-700 ring-red-600/20",
   CONFIRMED: "bg-emerald-100 text-emerald-700",
   COMPLETED: "bg-neutral-200 text-neutral-700",
   CANCELLED: "bg-red-100 text-red-700",

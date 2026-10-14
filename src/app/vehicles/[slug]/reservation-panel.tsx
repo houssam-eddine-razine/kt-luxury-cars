@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 
 import { createReservationRequest } from "./reservation-actions";
+import { EuropeanDateInput } from "@/components/ui/european-date-input";
 
 type ReservationPanelProps = {
   vehicle: {
@@ -77,6 +78,7 @@ export function ReservationPanel({
     useState("airport");
 
   const [error, setError] = useState("");
+
   const [submitting, setSubmitting] =
     useState(false);
 
@@ -123,6 +125,7 @@ export function ReservationPanel({
       setError(
         translations("missingCustomerInformation"),
       );
+
       return;
     }
 
@@ -140,8 +143,8 @@ export function ReservationPanel({
     setSubmitting(true);
 
     /*
-     * Open a blank window immediately so mobile browsers do not
-     * block WhatsApp after the database request finishes.
+     * Opening the temporary tab immediately prevents mobile
+     * browsers from blocking WhatsApp after the database request.
      */
     const whatsappWindow = window.open(
       "about:blank",
@@ -162,12 +165,14 @@ export function ReservationPanel({
           locale,
           pickupDate,
           returnDate,
+
           deliveryLocation: location as
             | "airport"
             | "cityCentre"
             | "trainStation"
             | "hotelRiad"
             | "privateVilla",
+
           website: "",
         });
 
@@ -185,6 +190,7 @@ export function ReservationPanel({
           setError(
             translations("vehicleUnavailable"),
           );
+
           return;
         }
 
@@ -237,8 +243,13 @@ export function ReservationPanel({
           message,
         )}`;
 
-      if (whatsappWindow && !whatsappWindow.closed) {
-        whatsappWindow.location.replace(whatsappUrl);
+      if (
+        whatsappWindow &&
+        !whatsappWindow.closed
+      ) {
+        whatsappWindow.location.replace(
+          whatsappUrl,
+        );
       } else {
         window.location.assign(whatsappUrl);
       }
@@ -318,7 +329,10 @@ export function ReservationPanel({
                 autoComplete="name"
                 value={customerName}
                 onChange={(event) => {
-                  setCustomerName(event.target.value);
+                  setCustomerName(
+                    event.target.value,
+                  );
+
                   setError("");
                 }}
                 placeholder={translations(
@@ -388,26 +402,30 @@ export function ReservationPanel({
               {translations("pickup")}
             </span>
 
-            <input
-              type="date"
-              required
-              min={today}
+            <EuropeanDateInput
+              key={`pickup-${pickupDate}`}
+              id="reservationPickupDate"
               value={pickupDate}
-              onChange={(event) => {
-                const value =
-                  event.target.value;
-
+              min={today}
+              onChange={(value) => {
                 setPickupDate(value);
                 setError("");
 
                 if (
+                  value &&
                   returnDate &&
                   returnDate <= value
                 ) {
                   setReturnDate("");
                 }
               }}
-              className={`${fieldClassName} [color-scheme:light]`}
+              required
+              placeholder={
+                locale === "fr"
+                  ? "JJ/MM/AAAA"
+                  : "DD/MM/YYYY"
+              }
+              className={fieldClassName}
             />
           </label>
 
@@ -417,19 +435,22 @@ export function ReservationPanel({
               {translations("return")}
             </span>
 
-            <input
-              type="date"
-              required
-              min={pickupDate || today}
+            <EuropeanDateInput
+              key={`return-${returnDate}-${pickupDate}`}
+              id="reservationReturnDate"
               value={returnDate}
-              onChange={(event) => {
-                setReturnDate(
-                  event.target.value,
-                );
-
+              min={pickupDate || today}
+              onChange={(value) => {
+                setReturnDate(value);
                 setError("");
               }}
-              className={`${fieldClassName} [color-scheme:light]`}
+              required
+              placeholder={
+                locale === "fr"
+                  ? "JJ/MM/AAAA"
+                  : "DD/MM/YYYY"
+              }
+              className={fieldClassName}
             />
           </label>
         </div>
@@ -491,7 +512,9 @@ export function ReservationPanel({
               </span>
 
               <span className="mt-0.5 block text-[10px] font-medium text-white/70 sm:text-xs">
-                {translations("personalConfirmation")}
+                {translations(
+                  "personalConfirmation",
+                )}
               </span>
             </span>
           </span>
@@ -506,8 +529,12 @@ export function ReservationPanel({
         <div className="grid gap-3 border-t border-[#E8DFD2] pt-5 text-xs text-[#66727D] sm:grid-cols-3 lg:grid-cols-1">
           {[
             translations("noPayment"),
-            translations("availabilityConfirmed"),
-            translations("conditionsBeforeConfirmation"),
+            translations(
+              "availabilityConfirmed",
+            ),
+            translations(
+              "conditionsBeforeConfirmation",
+            ),
           ].map((item) => (
             <p
               key={item}
