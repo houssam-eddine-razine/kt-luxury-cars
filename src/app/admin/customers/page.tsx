@@ -1,15 +1,15 @@
-import Link from "next/link";
 import {
-  CalendarDays,
   CircleDollarSign,
   Clock3,
   Mail,
   Phone,
   Search,
-  UserRound,
+  ShieldAlert,
+  Star,
   Users,
 } from "lucide-react";
 
+import { updateCustomerProfile } from "./actions";
 import { prisma } from "@/lib/prisma";
 import {
   Card,
@@ -19,21 +19,37 @@ import {
 type CustomersPageProps = {
   searchParams: Promise<{
     query?: string;
+    status?: string;
   }>;
 };
 
-type CustomerProfile = {
+type Customer = {
   key: string;
   name: string;
   phone: string;
   email: string | null;
   rentals: number;
   requests: number;
-  totalRevenue: number;
-  amountPaid: number;
+  revenue: number;
+  paid: number;
   outstanding: number;
   lastActivity: Date;
-  activeRental: boolean;
+  status: "NORMAL" | "TRUSTED" | "WATCHLIST" | "BLOCKED";
+  notes: string | null;
+};
+
+const statusLabels = {
+  NORMAL: "Normal",
+  TRUSTED: "Trusted",
+  WATCHLIST: "Watchlist",
+  BLOCKED: "Blocked",
+};
+
+const statusStyles = {
+  NORMAL: "bg-neutral-100 text-neutral-700",
+  TRUSTED: "bg-emerald-100 text-emerald-700",
+  WATCHLIST: "bg-amber-100 text-amber-700",
+  BLOCKED: "bg-red-100 text-red-700",
 };
 
 function normalizePhone(phone: string) {
@@ -70,148 +86,132 @@ export default async function CustomersPage({
 }: CustomersPageProps) {
   const parameters = await searchParams;
   const query = parameters.query?.trim().toLowerCase() ?? "";
-  const today = new Date();
+  const selectedStatus = parameters.status ?? "ALL";
 
-  const [bookings, requests] = await Promise.all([
-    prisma.booking.findMany({
-      where: {
-        status: {
-          not: "CANCELLED",
+  const [bookings, requests, savedProfiles] =
+    await Promise.all([
+      prisma.booking.findMany({
+        where: {
+          status: {
+            not: "CANCELLED",
+          },
         },
-      },
-      select: {
-        customerName: true,
-        phone: true,
-        email: true,
-        totalPrice: true,
-        amountPaid: true,
-        pickupDate: true,
-        returnDate: true,
-        createdAt: true,
-        status: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-
-    prisma.reservationRequest.findMany({
-      where: {
-        status: {
-          not: "CANCELLED",
+        orderBy: {
+          createdAt: "desc",
         },
-      },
-      select: {
-        customerName: true,
-        phone: true,
-        email: true,
-        createdAt: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-  ]);
+      }),
 
-  const customerMap = new Map<string, CustomerProfile>();
+      prisma.reservationRequest.findMany({
+        where: {
+          status: {
+            not: "CANCELLED",
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+
+      prisma.customerProfile.findMany(),
+    ]);
+
+  const profiles = new Map(
+    savedProfiles.map((profile) => [
+      profile.phoneKey,
+      profile,
+    ]),
+  );
+
+  const customers = new Map<string, Customer>();
 
   for (const request of requests) {
     const key = normalizePhone(request.phone);
-    const current = customerMap.get(key);
+    const saved = profiles.get(key);
+    const customer = customers.get(key);
 
-    if (current) {
-      current.requests += 1;
+    if (customer) {
+      customer.requests += 1;
 
-      if (request.createdAt > current.lastActivity) {
-        current.lastActivity = request.createdAt;
-        current.name = request.customerName;
-        current.email = request.email ?? current.email;
-        current.phone = request.phone;
+      if (request.createdAt > customer.lastActivity) {
+        customer.lastActivity = request.createdAt;
       }
 
       continue;
     }
 
-    customerMap.set(key, {
+    customers.set(key, {
       key,
-      name: request.customerName,
-      phone: request.phone,
-      email: request.email,
+      name: saved?.displayName ?? request.customerName,
+      phone: saved?.phone ?? request.phone,
+      email: saved?.email ?? request.email,
       rentals: 0,
       requests: 1,
-      totalRevenue: 0,
-      amountPaid: 0,
+      revenue: 0,
+      paid: 0,
       outstanding: 0,
       lastActivity: request.createdAt,
-      activeRental: false,
+      status: saved?.status ?? "NORMAL",
+      notes: saved?.notes ?? null,
     });
   }
 
   for (const booking of bookings) {
     const key = normalizePhone(booking.phone);
-    const current = customerMap.get(key);
+    const saved = profiles.get(key);
+    const customer = customers.get(key);
 
-    const activeRental =
-      booking.status === "ACTIVE" ||
-      (booking.pickupDate <= today &&
-        booking.returnDate > today);
-
-    if (current) {
-      current.rentals += 1;
-      current.totalRevenue += booking.totalPrice;
-      current.amountPaid += booking.amountPaid;
-      current.outstanding += Math.max(
+    if (customer) {
+      customer.rentals += 1;
+      customer.revenue += booking.totalPrice;
+      customer.paid += booking.amountPaid;
+      customer.outstanding += Math.max(
         booking.totalPrice - booking.amountPaid,
         0,
       );
-      current.activeRental =
-        current.activeRental || activeRental;
 
-      if (booking.createdAt > current.lastActivity) {
-        current.lastActivity = booking.createdAt;
-        current.name = booking.customerName;
-        current.email = booking.email ?? current.email;
-        current.phone = booking.phone;
+      if (booking.createdAt > customer.lastActivity) {
+        customer.lastActivity = booking.createdAt;
       }
 
       continue;
     }
 
-    customerMap.set(key, {
+    customers.set(key, {
       key,
-      name: booking.customerName,
-      phone: booking.phone,
-      email: booking.email,
+      name: saved?.displayName ?? booking.customerName,
+      phone: saved?.phone ?? booking.phone,
+      email: saved?.email ?? booking.email,
       rentals: 1,
       requests: 0,
-      totalRevenue: booking.totalPrice,
-      amountPaid: booking.amountPaid,
+      revenue: booking.totalPrice,
+      paid: booking.amountPaid,
       outstanding: Math.max(
         booking.totalPrice - booking.amountPaid,
         0,
       ),
       lastActivity: booking.createdAt,
-      activeRental,
+      status: saved?.status ?? "NORMAL",
+      notes: saved?.notes ?? null,
     });
   }
 
-  const allCustomers = Array.from(customerMap.values());
+  const allCustomers = Array.from(customers.values());
 
-  const customers = allCustomers
+  const filteredCustomers = allCustomers
     .filter((customer) => {
-      if (!query) {
-        return true;
-      }
+      const matchesQuery =
+        !query ||
+        [customer.name, customer.phone, customer.email]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
 
-      return [
-        customer.name,
-        customer.phone,
-        customer.email,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
+      const matchesStatus =
+        selectedStatus === "ALL" ||
+        customer.status === selectedStatus;
+
+      return matchesQuery && matchesStatus;
     })
     .sort(
       (first, second) =>
@@ -220,74 +220,74 @@ export default async function CustomersPage({
     );
 
   const totalRevenue = allCustomers.reduce(
-    (total, customer) =>
-      total + customer.totalRevenue,
+    (total, customer) => total + customer.revenue,
     0,
   );
 
   const outstanding = allCustomers.reduce(
-    (total, customer) =>
-      total + customer.outstanding,
+    (total, customer) => total + customer.outstanding,
     0,
   );
 
-  const repeatCustomers = allCustomers.filter(
-    (customer) => customer.rentals > 1,
+  const trusted = allCustomers.filter(
+    (customer) => customer.status === "TRUSTED",
   ).length;
 
-  const activeCustomers = allCustomers.filter(
-    (customer) => customer.activeRental,
+  const risky = allCustomers.filter(
+    (customer) =>
+      customer.status === "WATCHLIST" ||
+      customer.status === "BLOCKED",
   ).length;
 
   const indicators = [
     {
-      label: "Total customers",
+      label: "Customers",
       value: allCustomers.length,
       icon: Users,
       color: "bg-blue-50 text-blue-700",
     },
     {
-      label: "Active rentals",
-      value: activeCustomers,
-      icon: CalendarDays,
+      label: "Trusted",
+      value: trusted,
+      icon: Star,
       color: "bg-emerald-50 text-emerald-700",
     },
     {
-      label: "Repeat customers",
-      value: repeatCustomers,
-      icon: UserRound,
-      color: "bg-purple-50 text-purple-700",
+      label: "Requires attention",
+      value: risky,
+      icon: ShieldAlert,
+      color: "bg-red-50 text-red-700",
     },
     {
-      label: "Customer revenue",
+      label: "Total revenue",
       value: formatMoney(totalRevenue),
       icon: CircleDollarSign,
-      color: "bg-amber-50 text-amber-700",
+      color: "bg-purple-50 text-purple-700",
     },
     {
       label: "Outstanding",
       value: formatMoney(outstanding),
       icon: Clock3,
-      color: "bg-red-50 text-red-700",
+      color: "bg-amber-50 text-amber-700",
     },
   ];
 
   return (
     <div className="mx-auto max-w-7xl space-y-7">
-      <div>
+      <header>
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Customer relationships
         </p>
 
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#102e2b] sm:text-4xl">
+        <h1 className="mt-2 text-3xl font-semibold text-[#102e2b] sm:text-4xl">
           Customers
         </h1>
 
         <p className="mt-2 text-sm text-neutral-500">
-          Profiles are grouped automatically using the customer
-          phone number.
+          Rental history, payment information and internal
+          customer management.
         </p>
-      </div>
+      </header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {indicators.map((indicator) => {
@@ -315,153 +315,181 @@ export default async function CustomersPage({
         })}
       </section>
 
-      <form className="rounded-2xl border bg-white p-4 shadow-sm">
-        <label className="relative block">
-          <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-neutral-400" />
+      <form className="grid gap-3 rounded-2xl border bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_auto]">
+        <label className="relative">
+          <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
 
           <input
             name="query"
             defaultValue={parameters.query ?? ""}
-            placeholder="Search by name, phone or email"
-            className="h-12 w-full rounded-xl border bg-neutral-50 pl-12 pr-28 text-sm outline-none focus:border-[#a47d2f] focus:bg-white"
+            placeholder="Search name, phone or email"
+            className="h-12 w-full rounded-xl border bg-neutral-50 pl-11 pr-4 text-sm outline-none"
           />
-
-          <button
-            type="submit"
-            className="absolute right-1.5 top-1.5 h-9 rounded-lg bg-[#0B1726] px-4 text-xs font-semibold text-white"
-          >
-            Search
-          </button>
         </label>
+
+        <select
+          name="status"
+          defaultValue={selectedStatus}
+          className="h-12 rounded-xl border bg-neutral-50 px-4 text-sm"
+        >
+          <option value="ALL">All statuses</option>
+          <option value="NORMAL">Normal</option>
+          <option value="TRUSTED">Trusted</option>
+          <option value="WATCHLIST">Watchlist</option>
+          <option value="BLOCKED">Blocked</option>
+        </select>
+
+        <button
+          type="submit"
+          className="h-12 rounded-xl bg-[#0B1726] px-6 text-sm font-semibold text-white"
+        >
+          Search
+        </button>
       </form>
 
-      <section>
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">
-              Customer directory
-            </h2>
+      <section className="grid gap-4">
+        {filteredCustomers.map((customer) => (
+          <details
+            key={customer.key}
+            className="group overflow-hidden rounded-2xl border bg-white shadow-sm"
+          >
+            <summary className="grid cursor-pointer list-none gap-5 p-5 md:grid-cols-[1.3fr_repeat(4,0.55fr)] md:items-center">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-semibold">
+                    {customer.name}
+                  </h2>
 
-            <p className="mt-1 text-sm text-neutral-500">
-              {customers.length} customer
-              {customers.length === 1 ? "" : "s"}
-            </p>
-          </div>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusStyles[customer.status]}`}
+                  >
+                    {statusLabels[customer.status]}
+                  </span>
+                </div>
 
-          {query && (
-            <Link
-              href="/admin/customers"
-              className="text-sm font-semibold text-[#8d6b2b]"
+                <p className="mt-2 flex items-center gap-1 text-xs text-neutral-500">
+                  <Phone className="size-3.5" />
+                  {customer.phone}
+                </p>
+
+                {customer.email && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-neutral-500">
+                    <Mail className="size-3.5" />
+                    {customer.email}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs text-neutral-500">
+                  Rentals
+                </p>
+                <p className="font-semibold">
+                  {customer.rentals}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-neutral-500">
+                  Revenue
+                </p>
+                <p className="font-semibold">
+                  {formatMoney(customer.revenue)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-neutral-500">
+                  Outstanding
+                </p>
+                <p className="font-semibold text-red-700">
+                  {formatMoney(customer.outstanding)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-neutral-500">
+                  Last activity
+                </p>
+                <p className="font-semibold">
+                  {formatDate(customer.lastActivity)}
+                </p>
+              </div>
+            </summary>
+
+            <form
+              action={updateCustomerProfile}
+              className="border-t bg-neutral-50 p-5"
             >
-              Clear search
-            </Link>
-          )}
-        </div>
+              <input
+                type="hidden"
+                name="displayName"
+                value={customer.name}
+              />
 
-        {customers.length === 0 ? (
+              <input
+                type="hidden"
+                name="phone"
+                value={customer.phone}
+              />
+
+              <input
+                type="hidden"
+                name="email"
+                value={customer.email ?? ""}
+              />
+
+              <div className="grid gap-4 md:grid-cols-[220px_1fr_auto] md:items-end">
+                <label className="space-y-2">
+                  <span className="text-sm font-medium">
+                    Customer status
+                  </span>
+
+                  <select
+                    name="status"
+                    defaultValue={customer.status}
+                    className="h-12 w-full rounded-xl border bg-white px-4 text-sm"
+                  >
+                    <option value="NORMAL">Normal</option>
+                    <option value="TRUSTED">Trusted</option>
+                    <option value="WATCHLIST">
+                      Watchlist
+                    </option>
+                    <option value="BLOCKED">Blocked</option>
+                  </select>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-sm font-medium">
+                    Internal notes
+                  </span>
+
+                  <textarea
+                    name="notes"
+                    defaultValue={customer.notes ?? ""}
+                    rows={3}
+                    placeholder="Damage history, payment behaviour or preferences..."
+                    className="w-full rounded-xl border bg-white px-4 py-3 text-sm"
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  className="min-h-12 rounded-xl bg-[#0B1726] px-5 text-sm font-semibold text-white"
+                >
+                  Save profile
+                </button>
+              </div>
+            </form>
+          </details>
+        ))}
+
+        {filteredCustomers.length === 0 && (
           <div className="rounded-2xl border border-dashed bg-white p-12 text-center">
             <Users className="mx-auto size-10 text-neutral-300" />
-
             <p className="mt-4 font-semibold">
               No customers found
             </p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {customers.map((customer) => (
-              <Card key={customer.key}>
-                <CardContent className="grid gap-5 p-5 md:grid-cols-[1.4fr_repeat(4,0.6fr)] md:items-center">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate font-semibold">
-                        {customer.name}
-                      </h3>
-
-                      {customer.activeRental && (
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
-                          Active rental
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-neutral-500">
-                      <a
-                        href={`tel:${customer.phone}`}
-                        className="flex items-center gap-1"
-                      >
-                        <Phone className="size-3.5" />
-                        {customer.phone}
-                      </a>
-
-                      {customer.email && (
-                        <a
-                          href={`mailto:${customer.email}`}
-                          className="flex items-center gap-1"
-                        >
-                          <Mail className="size-3.5" />
-                          {customer.email}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-neutral-500">
-                      Rentals
-                    </p>
-                    <p className="mt-1 font-semibold">
-                      {customer.rentals}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-neutral-500">
-                      Revenue
-                    </p>
-                    <p className="mt-1 font-semibold">
-                      {formatMoney(customer.totalRevenue)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-neutral-500">
-                      Outstanding
-                    </p>
-                    <p
-                      className={`mt-1 font-semibold ${
-                        customer.outstanding > 0
-                          ? "text-red-700"
-                          : "text-emerald-700"
-                      }`}
-                    >
-                      {formatMoney(customer.outstanding)}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3 md:block">
-                    <div>
-                      <p className="text-xs text-neutral-500">
-                        Last activity
-                      </p>
-                      <p className="mt-1 text-sm font-semibold">
-                        {formatDate(customer.lastActivity)}
-                      </p>
-                    </div>
-
-                    <a
-                      href={`https://wa.me/${normalizePhone(
-                        customer.phone,
-                      )}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex min-h-10 items-center rounded-lg bg-[#128c5a] px-3 text-xs font-semibold text-white md:mt-3"
-                    >
-                      WhatsApp
-                    </a>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         )}
       </section>
