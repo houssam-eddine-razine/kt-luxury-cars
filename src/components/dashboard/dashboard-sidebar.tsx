@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import {
   CalendarDays,
+  CalendarRange,
   CarFront,
   CircleDollarSign,
-  ClipboardCheck,
   Gauge,
   Globe,
   LogOut,
@@ -25,14 +25,9 @@ const navigation = [
     icon: Gauge,
   },
   {
-    name: "Vehicles",
-    href: "/admin/vehicles",
-    icon: CarFront,
-  },
-  {
-    name: "Rental policies",
-    href: "/admin/rental-policies",
-    icon: ClipboardCheck,
+    name: "Planning",
+    href: "/admin/planning",
+    icon: CalendarRange,
   },
   {
     name: "Reservations",
@@ -40,9 +35,14 @@ const navigation = [
     icon: CalendarDays,
   },
   {
-    name: "Customers",
-    href: "/admin/customers",
-    icon: Users,
+    name: "Vehicles",
+    href: "/admin/vehicles",
+    icon: CarFront,
+  },
+  {
+    name: "Maintenance",
+    href: "/admin/maintenance",
+    icon: Wrench,
   },
   {
     name: "Finances",
@@ -50,14 +50,14 @@ const navigation = [
     icon: CircleDollarSign,
   },
   {
+    name: "Customers",
+    href: "/admin/customers",
+    icon: Users,
+  },
+  {
     name: "Website",
     href: "/admin/website",
     icon: Globe,
-  },
-  {
-    name: "Maintenance",
-    href: "/admin/maintenance",
-    icon: Wrench,
   },
   {
     name: "Settings",
@@ -75,7 +75,7 @@ function LogoutButton() {
       disabled={pending}
       className="flex w-full items-center gap-3 rounded-md px-4 py-3 text-sm text-white/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <LogOut className="size-5" />
+      <LogOut className="size-5 shrink-0" />
 
       {pending ? "Signing out..." : "Sign out"}
     </button>

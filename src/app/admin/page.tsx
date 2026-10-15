@@ -8,6 +8,7 @@ import {
   ClipboardPlus,
   Clock3,
   KeyRound,
+  ReceiptText,
   RotateCcw,
   TriangleAlert,
   WalletCards,
@@ -32,16 +33,14 @@ function startOfUtcDay(date: Date) {
 
 function addDays(date: Date, days: number) {
   const result = new Date(date);
-
   result.setUTCDate(result.getUTCDate() + days);
-
   return result;
 }
 
 function formatMoney(value: number) {
-  return new Intl.NumberFormat("fr-MA", {
+  return `${new Intl.NumberFormat("fr-MA", {
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value)} MAD`;
 }
 
 function formatDate(value: Date) {
@@ -55,22 +54,22 @@ function formatDate(value: Date) {
 
 export default async function AdminDashboardPage() {
   const now = new Date();
-  const todayStart = startOfUtcDay(now);
-  const tomorrowStart = addDays(todayStart, 1);
-  const nextSevenDays = addDays(todayStart, 7);
+  const today = startOfUtcDay(now);
+  const tomorrow = addDays(today, 1);
+  const nextSevenDays = addDays(today, 7);
 
   const monthStart = new Date(
     Date.UTC(
-      todayStart.getUTCFullYear(),
-      todayStart.getUTCMonth(),
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
       1,
     ),
   );
 
   const nextMonthStart = new Date(
     Date.UTC(
-      todayStart.getUTCFullYear(),
-      todayStart.getUTCMonth() + 1,
+      today.getUTCFullYear(),
+      today.getUTCMonth() + 1,
       1,
     ),
   );
@@ -83,7 +82,8 @@ export default async function AdminDashboardPage() {
     returnsToday,
     newRequests,
     monthlyBookings,
-    monthlyMaintenance,
+    monthlyExpenses,
+    overdueExpenses,
     maintenanceEvents,
   ] = await Promise.all([
     prisma.vehicle.findMany({
@@ -94,20 +94,8 @@ export default async function AdminDashboardPage() {
       },
       select: {
         id: true,
-        brand: true,
-        model: true,
-        registration: true,
         status: true,
-        mileage: true,
       },
-      orderBy: [
-        {
-          brand: "asc",
-        },
-        {
-          model: "asc",
-        },
-      ],
     }),
 
     prisma.booking.findMany({
@@ -116,20 +104,14 @@ export default async function AdminDashboardPage() {
           in: ["CONFIRMED", "ACTIVE"],
         },
         pickupDate: {
-          lte: todayStart,
+          lte: today,
         },
         returnDate: {
-          gt: todayStart,
+          gt: today,
         },
       },
       include: {
-        vehicle: {
-          select: {
-            brand: true,
-            model: true,
-            registration: true,
-          },
-        },
+        vehicle: true,
       },
       orderBy: {
         returnDate: "asc",
@@ -142,7 +124,7 @@ export default async function AdminDashboardPage() {
           in: ["PENDING", "CONFIRMED"],
         },
         pickupDate: {
-          gte: tomorrowStart,
+          gte: tomorrow,
           lt: nextSevenDays,
         },
       },
@@ -154,18 +136,12 @@ export default async function AdminDashboardPage() {
           in: ["PENDING", "CONFIRMED", "ACTIVE"],
         },
         pickupDate: {
-          gte: todayStart,
-          lt: tomorrowStart,
+          gte: today,
+          lt: tomorrow,
         },
       },
       include: {
-        vehicle: {
-          select: {
-            brand: true,
-            model: true,
-            registration: true,
-          },
-        },
+        vehicle: true,
       },
       orderBy: {
         pickupTime: "asc",
@@ -178,18 +154,12 @@ export default async function AdminDashboardPage() {
           in: ["CONFIRMED", "ACTIVE"],
         },
         returnDate: {
-          gte: todayStart,
-          lt: tomorrowStart,
+          gte: today,
+          lt: tomorrow,
         },
       },
       include: {
-        vehicle: {
-          select: {
-            brand: true,
-            model: true,
-            registration: true,
-          },
-        },
+        vehicle: true,
       },
       orderBy: {
         returnTime: "asc",
@@ -218,27 +188,25 @@ export default async function AdminDashboardPage() {
       },
     }),
 
-    prisma.maintenanceEvent.findMany({
+    prisma.expense.aggregate({
       where: {
-        status: "COMPLETED",
-        OR: [
-          {
-            completedDate: {
-              gte: monthStart,
-              lt: nextMonthStart,
-            },
-          },
-          {
-            completedDate: null,
-            scheduledDate: {
-              gte: monthStart,
-              lt: nextMonthStart,
-            },
-          },
-        ],
+        status: "PAID",
+        expenseDate: {
+          gte: monthStart,
+          lt: nextMonthStart,
+        },
       },
-      select: {
-        cost: true,
+      _sum: {
+        amount: true,
+      },
+    }),
+
+    prisma.expense.count({
+      where: {
+        status: "PLANNED",
+        dueDate: {
+          lt: today,
+        },
       },
     }),
 
@@ -249,15 +217,7 @@ export default async function AdminDashboardPage() {
         },
       },
       include: {
-        vehicle: {
-          select: {
-            id: true,
-            brand: true,
-            model: true,
-            registration: true,
-            mileage: true,
-          },
-        },
+        vehicle: true,
       },
       orderBy: {
         scheduledDate: "asc",
@@ -278,25 +238,25 @@ export default async function AdminDashboardPage() {
   ).length;
 
   const utilization =
-    operationalFleet.length > 0
-      ? Math.round(
+    operationalFleet.length === 0
+      ? 0
+      : Math.round(
           (activeVehicleIds.size /
             operationalFleet.length) *
             100,
-        )
-      : 0;
+        );
 
-  const expectedMonthlyRevenue = monthlyBookings.reduce(
+  const bookedRevenue = monthlyBookings.reduce(
     (total, booking) => total + booking.totalPrice,
     0,
   );
 
-  const collectedMonthlyRevenue = monthlyBookings.reduce(
+  const collectedRevenue = monthlyBookings.reduce(
     (total, booking) => total + booking.amountPaid,
     0,
   );
 
-  const outstandingMonthlyRevenue = monthlyBookings.reduce(
+  const outstandingRevenue = monthlyBookings.reduce(
     (total, booking) =>
       total +
       Math.max(
@@ -306,40 +266,33 @@ export default async function AdminDashboardPage() {
     0,
   );
 
-  const maintenanceCost = monthlyMaintenance.reduce(
-    (total, maintenance) =>
-      total + (maintenance.cost ?? 0),
-    0,
-  );
+  const paidExpenses =
+    monthlyExpenses._sum.amount ?? 0;
 
   const operatingBalance =
-    collectedMonthlyRevenue - maintenanceCost;
+    collectedRevenue - paidExpenses;
 
   const urgentMaintenance = maintenanceEvents
     .filter((maintenance) => {
-      const scheduledOverdue =
+      const scheduleReached =
         (maintenance.status === "SCHEDULED" ||
           maintenance.status === "IN_PROGRESS") &&
-        maintenance.scheduledDate < todayStart;
+        maintenance.scheduledDate <= today;
 
-      const dateLimitReached =
+      const dateReached =
         maintenance.nextDueDate !== null &&
-        maintenance.nextDueDate <= todayStart;
+        maintenance.nextDueDate <= today;
 
-      const mileageLimitReached =
+      const mileageReached =
         maintenance.nextServiceMileage !== null &&
         maintenance.vehicle.mileage >=
           maintenance.nextServiceMileage;
 
-      return (
-        scheduledOverdue ||
-        dateLimitReached ||
-        mileageLimitReached
-      );
+      return scheduleReached || dateReached || mileageReached;
     })
     .slice(0, 5);
 
-  const operationIndicators = [
+  const operationCards = [
     {
       label: "Available today",
       value: availableVehicles,
@@ -359,7 +312,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Upcoming bookings",
       value: upcomingBookings,
-      description: "Starting within 7 days",
+      description: "Starting within seven days",
       icon: CalendarCheck2,
       color: "bg-blue-50 text-blue-700",
       href: "/admin/planning",
@@ -374,46 +327,40 @@ export default async function AdminDashboardPage() {
     },
   ];
 
-  const financialIndicators = [
+  const financeCards = [
     {
       label: "Booked this month",
-      value: `${formatMoney(
-        expectedMonthlyRevenue,
-      )} MAD`,
+      value: formatMoney(bookedRevenue),
       description: "Expected rental revenue",
       icon: CircleDollarSign,
       color: "bg-blue-50 text-blue-700",
     },
     {
       label: "Collected",
-      value: `${formatMoney(
-        collectedMonthlyRevenue,
-      )} MAD`,
-      description: "Paid on this month's rentals",
+      value: formatMoney(collectedRevenue),
+      description: "Payments received",
       icon: WalletCards,
       color: "bg-emerald-50 text-emerald-700",
     },
     {
       label: "Outstanding",
-      value: `${formatMoney(
-        outstandingMonthlyRevenue,
-      )} MAD`,
+      value: formatMoney(outstandingRevenue),
       description: "Still to be collected",
       icon: Clock3,
       color: "bg-amber-50 text-amber-700",
     },
     {
-      label: "Maintenance costs",
-      value: `${formatMoney(maintenanceCost)} MAD`,
-      description: "Completed this month",
-      icon: Wrench,
+      label: "Paid expenses",
+      value: formatMoney(paidExpenses),
+      description: "All expenses this month",
+      icon: ReceiptText,
       color: "bg-red-50 text-red-700",
     },
   ];
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-8">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             KT Luxury Cars
@@ -430,90 +377,93 @@ export default async function AdminDashboardPage() {
 
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/admin/planning#new-booking"
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#0B1726] px-5 text-sm font-semibold text-white transition hover:bg-[#17283d]"
+            href="/admin/planning"
+            className="inline-flex min-h-11 items-center rounded-md border bg-white px-5 text-sm font-semibold transition hover:bg-muted"
           >
             <CalendarRange className="mr-2 size-4" />
+            Open calendar
+          </Link>
+
+          <Link
+            href="/admin/planning#new-booking"
+            className="inline-flex min-h-11 items-center rounded-md bg-[#0B1726] px-5 text-sm font-semibold text-white"
+          >
+            <CalendarCheck2 className="mr-2 size-4" />
             New booking
           </Link>
 
           <Link
             href="/admin/planning#new-maintenance"
-            className="inline-flex min-h-11 items-center justify-center rounded-md border bg-background px-5 text-sm font-semibold transition hover:bg-muted"
+            className="inline-flex min-h-11 items-center rounded-md border bg-white px-5 text-sm font-semibold"
           >
             <Wrench className="mr-2 size-4" />
             Maintenance
           </Link>
         </div>
-      </div>
+      </header>
 
-      {urgentMaintenance.length > 0 && (
-        <Link
-          href="/admin/maintenance"
-          className="flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-800 transition hover:bg-red-100"
-        >
-          <div className="flex items-start gap-3">
-            <TriangleAlert className="mt-0.5 size-5 shrink-0" />
+      {(urgentMaintenance.length > 0 ||
+        overdueExpenses > 0) && (
+        <div className="grid gap-3 md:grid-cols-2">
+          {urgentMaintenance.length > 0 && (
+            <Link
+              href="/admin/maintenance"
+              className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"
+            >
+              <span className="flex items-center gap-3">
+                <TriangleAlert className="size-5" />
+                {urgentMaintenance.length} maintenance alert
+                {urgentMaintenance.length === 1 ? "" : "s"}
+              </span>
 
-            <div>
-              <p className="font-semibold">
-                {urgentMaintenance.length} maintenance{" "}
-                {urgentMaintenance.length === 1
-                  ? "alert requires"
-                  : "alerts require"}{" "}
-                attention
-              </p>
+              <ArrowRight className="size-5" />
+            </Link>
+          )}
 
-              <p className="mt-1 text-sm text-red-700">
-                A scheduled date or service mileage has been
-                reached.
-              </p>
-            </div>
-          </div>
+          {overdueExpenses > 0 && (
+            <Link
+              href="/admin/finances"
+              className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800"
+            >
+              <span className="flex items-center gap-3">
+                <ReceiptText className="size-5" />
+                {overdueExpenses} overdue expense
+                {overdueExpenses === 1 ? "" : "s"}
+              </span>
 
-          <ArrowRight className="mt-1 size-5 shrink-0" />
-        </Link>
+              <ArrowRight className="size-5" />
+            </Link>
+          )}
+        </div>
       )}
 
       <section>
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">
-            Fleet today
-          </h2>
+        <h2 className="text-lg font-semibold">Fleet today</h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Live availability and customer activity.
-          </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {operationIndicators.map((indicator) => {
-            const Icon = indicator.icon;
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {operationCards.map((card) => {
+            const Icon = card.icon;
 
             return (
-              <Link
-                key={indicator.label}
-                href={indicator.href}
-                className="group"
-              >
-                <Card className="h-full transition group-hover:-translate-y-0.5 group-hover:shadow-md">
-                  <CardContent className="flex items-start justify-between p-5">
+              <Link key={card.label} href={card.href}>
+                <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-md">
+                  <CardContent className="flex justify-between p-5">
                     <div>
                       <p className="text-sm text-neutral-500">
-                        {indicator.label}
+                        {card.label}
                       </p>
 
                       <p className="mt-2 text-3xl font-semibold">
-                        {indicator.value}
+                        {card.value}
                       </p>
 
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {indicator.description}
+                        {card.description}
                       </p>
                     </div>
 
                     <div
-                      className={`flex size-11 shrink-0 items-center justify-center rounded-full ${indicator.color}`}
+                      className={`flex size-11 items-center justify-center rounded-full ${card.color}`}
                     >
                       <Icon className="size-5" />
                     </div>
@@ -526,53 +476,48 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section>
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">
               Financial snapshot
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Current month based on recorded bookings and
-              maintenance.
+              Revenue and all recorded expenses this month.
             </p>
           </div>
 
-          <p
-            className={`text-sm font-semibold ${
-              operatingBalance >= 0
-                ? "text-emerald-700"
-                : "text-red-700"
-            }`}
+          <Link
+            href="/admin/finances"
+            className="text-sm font-semibold text-[#8d6b2b]"
           >
-            Operating balance:{" "}
-            {formatMoney(operatingBalance)} MAD
-          </p>
+            Manage finances
+          </Link>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {financialIndicators.map((indicator) => {
-            const Icon = indicator.icon;
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {financeCards.map((card) => {
+            const Icon = card.icon;
 
             return (
-              <Card key={indicator.label}>
-                <CardContent className="flex items-start justify-between p-5">
+              <Card key={card.label}>
+                <CardContent className="flex justify-between p-5">
                   <div>
                     <p className="text-sm text-neutral-500">
-                      {indicator.label}
+                      {card.label}
                     </p>
 
                     <p className="mt-2 text-2xl font-semibold">
-                      {indicator.value}
+                      {card.value}
                     </p>
 
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {indicator.description}
+                      {card.description}
                     </p>
                   </div>
 
                   <div
-                    className={`flex size-11 shrink-0 items-center justify-center rounded-full ${indicator.color}`}
+                    className={`flex size-11 items-center justify-center rounded-full ${card.color}`}
                   >
                     <Icon className="size-5" />
                   </div>
@@ -581,133 +526,109 @@ export default async function AdminDashboardPage() {
             );
           })}
         </div>
+
+        <div
+          className={`mt-4 rounded-xl border p-5 ${
+            operatingBalance >= 0
+              ? "border-emerald-200 bg-emerald-50"
+              : "border-red-200 bg-red-50"
+          }`}
+        >
+          <p className="text-sm text-neutral-600">
+            Real operating balance
+          </p>
+
+          <p
+            className={`mt-1 text-3xl font-semibold ${
+              operatingBalance >= 0
+                ? "text-emerald-800"
+                : "text-red-800"
+            }`}
+          >
+            {formatMoney(operatingBalance)}
+          </p>
+
+          <p className="mt-1 text-xs text-neutral-500">
+            Collected rental income minus every paid expense.
+          </p>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        {[
+          {
+            title: "Pick-ups today",
+            items: pickupsToday,
+            icon: CalendarCheck2,
+            date: "pickupTime" as const,
+          },
+          {
+            title: "Returns today",
+            items: returnsToday,
+            icon: RotateCcw,
+            date: "returnTime" as const,
+          },
+        ].map((section) => {
+          const Icon = section.icon;
+
+          return (
+            <Card key={section.title} className="overflow-hidden">
+              <div className="flex items-center justify-between border-b px-5 py-4">
+                <div>
+                  <h2 className="font-semibold">
+                    {section.title}
+                  </h2>
+
+                  <p className="text-xs text-muted-foreground">
+                    {section.items.length} scheduled
+                  </p>
+                </div>
+
+                <Icon className="size-5 text-blue-700" />
+              </div>
+
+              <CardContent className="p-0">
+                {section.items.length === 0 ? (
+                  <p className="p-8 text-center text-sm text-muted-foreground">
+                    Nothing scheduled.
+                  </p>
+                ) : (
+                  <div className="divide-y">
+                    {section.items.map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="flex justify-between gap-4 px-5 py-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">
+                            {booking.customerName}
+                          </p>
+
+                          <p className="truncate text-xs text-muted-foreground">
+                            {booking.vehicle.brand}{" "}
+                            {booking.vehicle.model} ·{" "}
+                            {booking.vehicle.registration}
+                          </p>
+                        </div>
+
+                        <p className="shrink-0 text-sm font-semibold">
+                          {booking[section.date] ||
+                            "Time not set"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b px-5 py-4">
-            <div>
-              <h2 className="font-semibold">
-                Pick-ups today
-              </h2>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                {pickupsToday.length} scheduled
-              </p>
-            </div>
-
-            <CalendarCheck2 className="size-5 text-blue-700" />
-          </div>
-
-          <CardContent className="p-0">
-            {pickupsToday.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                No vehicle pick-ups today.
-              </p>
-            ) : (
-              <div className="divide-y">
-                {pickupsToday.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between gap-4 px-5 py-4"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
-                        {booking.customerName}
-                      </p>
-
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {booking.vehicle.brand}{" "}
-                        {booking.vehicle.model} ·{" "}
-                        {booking.vehicle.registration}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold">
-                        {booking.pickupTime || "Time not set"}
-                      </p>
-
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {booking.pickupLocation}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b px-5 py-4">
-            <div>
-              <h2 className="font-semibold">
-                Returns today
-              </h2>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                {returnsToday.length} scheduled
-              </p>
-            </div>
-
-            <RotateCcw className="size-5 text-indigo-700" />
-          </div>
-
-          <CardContent className="p-0">
-            {returnsToday.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                No vehicle returns today.
-              </p>
-            ) : (
-              <div className="divide-y">
-                {returnsToday.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="flex items-center justify-between gap-4 px-5 py-4"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
-                        {booking.customerName}
-                      </p>
-
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {booking.vehicle.brand}{" "}
-                        {booking.vehicle.model} ·{" "}
-                        {booking.vehicle.registration}
-                      </p>
-                    </div>
-
-                    <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold">
-                        {booking.returnTime || "Time not set"}
-                      </p>
-
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {booking.returnLocation ||
-                          booking.pickupLocation}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1fr_0.75fr]">
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b px-5 py-4">
-            <div>
-              <h2 className="font-semibold">
-                Active rentals
-              </h2>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                Vehicles currently with customers
-              </p>
-            </div>
+          <div className="flex justify-between border-b px-5 py-4">
+            <h2 className="font-semibold">Active rentals</h2>
 
             <Link
               href="/admin/planning"
@@ -719,37 +640,31 @@ export default async function AdminDashboardPage() {
 
           <CardContent className="p-0">
             {activeBookings.length === 0 ? (
-              <p className="px-5 py-10 text-center text-sm text-muted-foreground">
-                No active rentals right now.
+              <p className="p-8 text-center text-sm text-muted-foreground">
+                No active rentals.
               </p>
             ) : (
               <div className="divide-y">
                 {activeBookings.slice(0, 6).map((booking) => (
                   <div
                     key={booking.id}
-                    className="flex items-center justify-between gap-4 px-5 py-4"
+                    className="flex justify-between gap-4 px-5 py-4"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
+                    <div>
+                      <p className="font-semibold">
                         {booking.vehicle.brand}{" "}
                         {booking.vehicle.model}
                       </p>
 
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {booking.customerName} ·{" "}
                         {booking.reference}
                       </p>
                     </div>
 
-                    <div className="shrink-0 text-right">
-                      <p className="text-xs text-muted-foreground">
-                        Return
-                      </p>
-
-                      <p className="mt-1 text-sm font-semibold">
-                        {formatDate(booking.returnDate)}
-                      </p>
-                    </div>
+                    <p className="text-sm font-semibold">
+                      {formatDate(booking.returnDate)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -758,16 +673,10 @@ export default async function AdminDashboardPage() {
         </Card>
 
         <Card className="overflow-hidden">
-          <div className="flex items-center justify-between border-b px-5 py-4">
-            <div>
-              <h2 className="font-semibold">
-                Maintenance alerts
-              </h2>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                Date and mileage reminders
-              </p>
-            </div>
+          <div className="flex justify-between border-b px-5 py-4">
+            <h2 className="font-semibold">
+              Maintenance alerts
+            </h2>
 
             <Link
               href="/admin/maintenance"
@@ -779,45 +688,30 @@ export default async function AdminDashboardPage() {
 
           <CardContent className="p-0">
             {urgentMaintenance.length === 0 ? (
-              <div className="px-5 py-10 text-center">
-                <Wrench className="mx-auto size-7 text-emerald-600" />
-
-                <p className="mt-3 text-sm font-medium">
-                  Maintenance is up to date
-                </p>
-              </div>
+              <p className="p-8 text-center text-sm text-muted-foreground">
+                Maintenance is up to date.
+              </p>
             ) : (
               <div className="divide-y">
                 {urgentMaintenance.map((maintenance) => (
                   <div
                     key={maintenance.id}
-                    className="flex items-center justify-between gap-4 px-5 py-4"
+                    className="flex justify-between gap-4 px-5 py-4"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
+                    <div>
+                      <p className="font-semibold">
                         {maintenance.vehicle.brand}{" "}
                         {maintenance.vehicle.model}
                       </p>
 
-                      <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {maintenance.type.replaceAll(
-                          "_",
-                          " ",
-                        )}
+                      <p className="text-xs text-muted-foreground">
+                        {maintenance.type.replaceAll("_", " ")}
                       </p>
                     </div>
 
-                    <div className="shrink-0 text-right">
-                      <p className="text-xs font-semibold text-red-700">
-                        Attention required
-                      </p>
-
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDate(
-                          maintenance.scheduledDate,
-                        )}
-                      </p>
-                    </div>
+                    <p className="text-sm font-semibold text-red-700">
+                      {formatDate(maintenance.scheduledDate)}
+                    </p>
                   </div>
                 ))}
               </div>
