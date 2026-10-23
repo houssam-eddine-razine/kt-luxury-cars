@@ -22,7 +22,7 @@ import { SiteHeader } from "@/components/public/site-header";
 import { TrustStats } from "@/components/public/trust-stats";
 import { prisma } from "@/lib/prisma";
 
-const phone = "212619019549";
+const phone = "212774140055";
 
 const whatsapp = `https://wa.me/${phone}?text=${encodeURIComponent(
   "Hello KT Luxury Cars, I would like to rent a car in Marrakech. Please send me the available vehicles, prices and delivery options.",

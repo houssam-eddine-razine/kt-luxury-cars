@@ -1,4 +1,4 @@
-type JsonLdProps = {
+﻿type JsonLdProps = {
   data: Record<string, unknown>;
 };
 
@@ -32,7 +32,7 @@ export function BusinessStructuredData({
     name: "KT Luxury Cars",
     alternateName: "Kettaoui Car Rental",
     url: websiteUrl,
-    telephone: "+212619019549",
+    telephone: "+212774140055",
     currenciesAccepted: "MAD",
     areaServed: [
       {
@@ -63,7 +63,7 @@ export function BusinessStructuredData({
     ],
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+212619019549",
+      telephone: "+212774140055",
       contactType: "customer service",
       areaServed: "MA",
       availableLanguage: ["English", "French"],
@@ -124,7 +124,7 @@ export function VehicleStructuredData({
   const description =
     language === "fr"
       ? vehicle.descriptionFr ??
-        `Louez la ${vehicleName} à Marrakech avec livraison privée et assistance directe.`
+        `Louez la ${vehicleName} Ã  Marrakech avec livraison privÃ©e et assistance directe.`
       : vehicle.descriptionEn ??
         `Rent the ${vehicleName} in Marrakech with private delivery and direct assistance.`;
 
@@ -186,7 +186,7 @@ export function VehicleStructuredData({
           {
             "@type": "ListItem",
             position: 2,
-            name: language === "fr" ? "Véhicules" : "Vehicles",
+            name: language === "fr" ? "VÃ©hicules" : "Vehicles",
             item: fleetUrl,
           },
           {

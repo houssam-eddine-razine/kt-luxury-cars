@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import Link from "next/link";
+import { useActionState, useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
@@ -9,7 +10,6 @@ import {
   LockKeyhole,
   Mail,
 } from "lucide-react";
-import { useState } from "react";
 
 import {
   login,
@@ -27,7 +27,8 @@ export function LoginForm() {
     initialState,
   );
 
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
   return (
     <form action={formAction} className="space-y-5">
@@ -45,7 +46,7 @@ export function LoginForm() {
         <Label htmlFor="email">Email address</Label>
 
         <div className="relative">
-          <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
           <Input
             id="email"
@@ -61,10 +62,19 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="password">Password</Label>
+
+          <Link
+            href="/admin/forgot-password"
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
         <div className="relative">
-          <LockKeyhole className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
           <Input
             id="password"
@@ -79,10 +89,14 @@ export function LoginForm() {
 
           <button
             type="button"
-            onClick={() => setShowPassword((current) => !current)}
-            className="absolute top-1/2 right-3 -translate-y-1/2 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() =>
+              setShowPassword((current) => !current)
+            }
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label={
-              showPassword ? "Hide password" : "Show password"
+              showPassword
+                ? "Hide password"
+                : "Show password"
             }
           >
             {showPassword ? (
@@ -101,7 +115,9 @@ export function LoginForm() {
       >
         {pending ? "Signing in..." : "Sign in securely"}
 
-        {!pending && <ArrowRight className="ml-2 size-4" />}
+        {!pending && (
+          <ArrowRight className="ml-2 size-4" />
+        )}
       </Button>
     </form>
   );

@@ -1,4 +1,8 @@
-import { CarFront, ShieldCheck } from "lucide-react";
+import {
+  CarFront,
+  CheckCircle2,
+  ShieldCheck,
+} from "lucide-react";
 
 import { LoginForm } from "./login-form";
 import {
@@ -9,12 +13,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function AdminLoginPage() {
+type AdminLoginPageProps = {
+  searchParams: Promise<{
+    reset?: string;
+  }>;
+};
+
+export default async function AdminLoginPage({
+  searchParams,
+}: AdminLoginPageProps) {
+  const parameters = await searchParams;
+  const passwordWasReset =
+    parameters.reset === "success";
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#071c17] px-4 py-10 sm:px-6">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(198,164,92,0.18),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,0.10),transparent_40%)]" />
 
-      <div className="absolute top-8 left-8 hidden items-center gap-3 text-white lg:flex">
+      <div className="absolute left-8 top-8 hidden items-center gap-3 text-white lg:flex">
         <div className="flex size-11 items-center justify-center rounded-xl border border-white/15 bg-white/10 backdrop-blur">
           <CarFront className="size-5 text-[#d6b66e]" />
         </div>
@@ -66,6 +82,14 @@ export default function AdminLoginPage() {
           </CardHeader>
 
           <CardContent className="px-6 pb-7 sm:px-8">
+            {passwordWasReset && (
+              <div className="mb-5 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+                Your password was changed successfully. You can
+                now sign in.
+              </div>
+            )}
+
             <LoginForm />
 
             <div className="mt-6 flex items-center justify-center gap-2 border-t pt-5 text-xs text-muted-foreground">

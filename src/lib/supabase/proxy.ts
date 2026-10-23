@@ -17,6 +17,21 @@ function copyCookies(
   return destination;
 }
 
+const publicAdminPaths = [
+  "/admin/login",
+  "/admin/forgot-password",
+  "/admin/reset-password",
+  "/admin/auth/callback",
+];
+
+function isPublicAdminPath(pathname: string) {
+  return publicAdminPaths.some(
+    (path) =>
+      pathname === path ||
+      pathname.startsWith(`${path}/`),
+  );
+}
+
 export async function updateSession(
   request: NextRequest,
 ) {
@@ -60,18 +75,21 @@ export async function updateSession(
     await supabase.auth.getClaims();
 
   const claims = error ? null : data?.claims;
+
   const email =
     typeof claims?.email === "string"
       ? claims.email
       : null;
 
   const authenticated = Boolean(claims);
+
   const administrator =
     authenticated && isAdministratorEmail(email);
 
   const pathname = request.nextUrl.pathname;
   const isAdminRoute = pathname.startsWith("/admin");
   const isLoginPage = pathname === "/admin/login";
+  const publicAdminPath = isPublicAdminPath(pathname);
 
   if (isLoginPage && administrator) {
     const adminUrl = request.nextUrl.clone();
@@ -87,7 +105,7 @@ export async function updateSession(
 
   if (
     isAdminRoute &&
-    !isLoginPage &&
+    !publicAdminPath &&
     !administrator
   ) {
     const loginUrl = request.nextUrl.clone();

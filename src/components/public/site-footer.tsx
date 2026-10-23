@@ -14,7 +14,7 @@ export async function SiteFooter() {
     await getTranslations("Footer");
 
   const whatsappUrl =
-    `https://wa.me/212619019549?text=${encodeURIComponent(
+    `https://wa.me/212774140055?text=${encodeURIComponent(
       translations("whatsappMessage"),
     )}`;
 
@@ -104,7 +104,7 @@ export async function SiteFooter() {
 
             <div className="mt-6 space-y-5 text-sm text-white/60">
               <a
-                href="tel:+212619019549"
+                href="tel:+212774140055"
                 className="flex items-start gap-3 transition hover:text-white"
               >
                 <Phone className="mt-0.5 size-4 shrink-0 text-[#D3AF60]" />

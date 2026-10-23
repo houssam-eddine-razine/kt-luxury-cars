@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-const phone = "212619019549";
+const phone = "212774140055";
 
 function getToday() {
   const date = new Date();

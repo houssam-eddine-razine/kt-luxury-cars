@@ -24,7 +24,7 @@ import { TrustStats } from "@/components/public/trust-stats";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 
-const phone = "212619019549";
+const phone = "212774140055";
 
 type PageProps = {
   params: Promise<{

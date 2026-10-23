@@ -47,7 +47,7 @@ export function SiteHeader() {
   ];
 
   const whatsappUrl =
-    `https://wa.me/212619019549?text=${encodeURIComponent(
+    `https://wa.me/212774140055?text=${encodeURIComponent(
       translations("whatsappMessage"),
     )}`;
 
