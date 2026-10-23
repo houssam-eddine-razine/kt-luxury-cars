@@ -1,5 +1,7 @@
 import Link from "next/link";
 import {
+  AlertCircle,
+  AlertTriangle,
   CalendarDays,
   CarFront,
   CheckCircle2,
@@ -9,12 +11,17 @@ import {
   MessageCircle,
   Phone,
   Search,
+  ShieldAlert,
+  ShieldCheck,
   UserRound,
 } from "lucide-react";
 
 import { updateReservationRequest } from "./actions";
 import { prisma } from "@/lib/prisma";
-import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Button,
+  buttonVariants,
+} from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -33,10 +40,17 @@ const reservationStatuses = [
 type ReservationStatus =
   (typeof reservationStatuses)[number];
 
+type CustomerStatus =
+  | "NORMAL"
+  | "TRUSTED"
+  | "WATCHLIST"
+  | "BLOCKED";
+
 type ReservationsPageProps = {
   searchParams: Promise<{
     status?: string;
     query?: string;
+    result?: string;
   }>;
 };
 
@@ -58,10 +72,30 @@ const statusStyles: Record<
 > = {
   NEW: "bg-purple-100 text-purple-700",
   CONTACTED: "bg-blue-100 text-blue-700",
-  DECLINED: "bg-red-50 text-red-700 ring-red-600/20",
+  DECLINED: "bg-red-50 text-red-700",
   CONFIRMED: "bg-emerald-100 text-emerald-700",
   COMPLETED: "bg-neutral-200 text-neutral-700",
   CANCELLED: "bg-red-100 text-red-700",
+};
+
+const customerStatusLabels: Record<
+  CustomerStatus,
+  string
+> = {
+  NORMAL: "Normal customer",
+  TRUSTED: "Trusted customer",
+  WATCHLIST: "Watchlist",
+  BLOCKED: "Blocked customer",
+};
+
+const customerStatusStyles: Record<
+  CustomerStatus,
+  string
+> = {
+  NORMAL: "bg-neutral-100 text-neutral-700",
+  TRUSTED: "bg-emerald-100 text-emerald-700",
+  WATCHLIST: "bg-amber-100 text-amber-800",
+  BLOCKED: "bg-red-100 text-red-800",
 };
 
 const locationLabels: Record<string, string> = {
@@ -72,12 +106,67 @@ const locationLabels: Record<string, string> = {
   privateVilla: "Private villa",
 };
 
+const resultMessages: Record<
+  string,
+  {
+    text: string;
+    className: string;
+    icon: typeof CheckCircle2;
+  }
+> = {
+  saved: {
+    text: "The reservation request was updated successfully.",
+    className:
+      "border-emerald-200 bg-emerald-50 text-emerald-800",
+    icon: CheckCircle2,
+  },
+
+  blocked: {
+    text: "This reservation cannot be confirmed because the customer is blocked.",
+    className: "border-red-200 bg-red-50 text-red-800",
+    icon: ShieldAlert,
+  },
+
+  invalid: {
+    text: "The submitted reservation information is invalid.",
+    className:
+      "border-amber-200 bg-amber-50 text-amber-800",
+    icon: AlertTriangle,
+  },
+
+  missing: {
+    text: "The reservation request could not be found.",
+    className: "border-red-200 bg-red-50 text-red-800",
+    icon: AlertCircle,
+  },
+
+  failed: {
+    text: "The reservation request could not be updated. Please try again.",
+    className: "border-red-200 bg-red-50 text-red-800",
+    icon: AlertCircle,
+  },
+};
+
 function isReservationStatus(
   value: string | undefined,
 ): value is ReservationStatus {
   return reservationStatuses.some(
     (status) => status === value,
   );
+}
+
+function normalizePhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.startsWith("212")) {
+    return digits;
+  }
+
+  if (digits.startsWith("0")) {
+    return `212${digits.slice(1)}`;
+  }
+
+  return digits;
 }
 
 function formatDate(value: Date) {
@@ -96,6 +185,7 @@ function formatDateTime(value: Date) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Africa/Casablanca",
   }).format(value);
 }
 
@@ -214,6 +304,37 @@ export default async function ReservationsPage({
       },
     });
 
+  const phoneKeys = Array.from(
+    new Set(
+      requests.map((request) =>
+        normalizePhone(request.phone),
+      ),
+    ),
+  );
+
+  const customerProfiles =
+    phoneKeys.length > 0
+      ? await prisma.customerProfile.findMany({
+          where: {
+            phoneKey: {
+              in: phoneKeys,
+            },
+          },
+          select: {
+            phoneKey: true,
+            status: true,
+            notes: true,
+          },
+        })
+      : [];
+
+  const profilesByPhone = new Map(
+    customerProfiles.map((profile) => [
+      profile.phoneKey,
+      profile,
+    ]),
+  );
+
   const [
     totalRequests,
     newRequests,
@@ -268,6 +389,10 @@ export default async function ReservationsPage({
     },
   ];
 
+  const resultMessage = parameters.result
+    ? resultMessages[parameters.result]
+    : undefined;
+
   return (
     <div className="mx-auto max-w-7xl space-y-7">
       <div>
@@ -280,10 +405,20 @@ export default async function ReservationsPage({
         </h1>
 
         <p className="mt-2 text-muted-foreground">
-          Track every website request, contact customers and update
-          its progress.
+          Track website requests, contact customers and update
+          their progress.
         </p>
       </div>
+
+      {resultMessage && (
+        <div
+          role="alert"
+          className={`flex items-start gap-3 rounded-xl border px-4 py-4 text-sm font-medium ${resultMessage.className}`}
+        >
+          <resultMessage.icon className="mt-0.5 size-5 shrink-0" />
+          <p>{resultMessage.text}</p>
+        </div>
+      )}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {indicators.map((indicator) => {
@@ -411,23 +546,38 @@ export default async function ReservationsPage({
               numberOfDays *
               request.advertisedDailyRate;
 
-            const phoneDigits =
-              request.phone.replace(/\D/g, "");
+            const phoneKey = normalizePhone(request.phone);
+            const customerProfile =
+              profilesByPhone.get(phoneKey);
+
+            const customerStatus =
+              (customerProfile?.status ??
+                "NORMAL") as CustomerStatus;
+
+            const isBlocked =
+              customerStatus === "BLOCKED";
+
+            const isWatchlisted =
+              customerStatus === "WATCHLIST";
 
             const replyMessage = encodeURIComponent(
               `Hello ${request.customerName}, this is KT Luxury Cars regarding your request ${request.reference} for the ${vehicleName}.`,
             );
 
             const whatsappUrl =
-              `https://wa.me/${phoneDigits}?text=${replyMessage}`;
+              `https://wa.me/${phoneKey}?text=${replyMessage}`;
 
             return (
               <Card
                 key={request.id}
                 className={
-                  request.status === "NEW"
-                    ? "border-purple-200 shadow-sm"
-                    : ""
+                  isBlocked
+                    ? "border-red-300 shadow-sm"
+                    : isWatchlisted
+                      ? "border-amber-300 shadow-sm"
+                      : request.status === "NEW"
+                        ? "border-purple-200 shadow-sm"
+                        : ""
                 }
               >
                 <CardContent className="p-0">
@@ -471,6 +621,20 @@ export default async function ReservationsPage({
                               }
                             </span>
 
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                customerStatusStyles[
+                                  customerStatus
+                                ]
+                              }`}
+                            >
+                              {
+                                customerStatusLabels[
+                                  customerStatus
+                                ]
+                              }
+                            </span>
+
                             <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium uppercase">
                               {request.locale}
                             </span>
@@ -501,6 +665,60 @@ export default async function ReservationsPage({
                           Reply on WhatsApp
                         </a>
                       </div>
+
+                      {isBlocked && (
+                        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                          <ShieldAlert className="mt-0.5 size-5 shrink-0" />
+
+                          <div>
+                            <p className="font-bold">
+                              This customer is blocked
+                            </p>
+
+                            <p className="mt-1">
+                              The request cannot be confirmed.
+                              Review the customer record before
+                              continuing.
+                            </p>
+
+                            {customerProfile?.notes && (
+                              <p className="mt-2 font-medium">
+                                Note: {customerProfile.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {isWatchlisted && (
+                        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                          <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+
+                          <div>
+                            <p className="font-bold">
+                              Customer requires additional checks
+                            </p>
+
+                            <p className="mt-1">
+                              Verify identity, documents and rental
+                              conditions before confirming.
+                            </p>
+
+                            {customerProfile?.notes && (
+                              <p className="mt-2 font-medium">
+                                Note: {customerProfile.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {customerStatus === "TRUSTED" && (
+                        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">
+                          <ShieldCheck className="size-5 shrink-0" />
+                          This customer is marked as trusted.
+                        </div>
+                      )}
 
                       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-lg bg-muted/40 p-4">
@@ -620,8 +838,16 @@ export default async function ReservationsPage({
                                   <option
                                     key={status}
                                     value={status}
+                                    disabled={
+                                      isBlocked &&
+                                      status === "CONFIRMED"
+                                    }
                                   >
                                     {statusLabels[status]}
+                                    {isBlocked &&
+                                    status === "CONFIRMED"
+                                      ? " — blocked"
+                                      : ""}
                                   </option>
                                 ),
                               )}
@@ -652,9 +878,20 @@ export default async function ReservationsPage({
                             </p>
                           </div>
 
-                          <Button type="submit">
-                            Save request
-                          </Button>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <Button type="submit">
+                              Save request
+                            </Button>
+
+                            <Link
+                              href="/admin/customers"
+                              className={buttonVariants({
+                                variant: "outline",
+                              })}
+                            >
+                              View customer records
+                            </Link>
+                          </div>
                         </form>
                       </details>
                     </div>

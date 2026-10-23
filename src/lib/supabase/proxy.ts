@@ -4,6 +4,8 @@ import {
   type NextRequest,
 } from "next/server";
 
+import { isAdministratorEmail } from "@/lib/auth/admin";
+
 function copyCookies(
   source: NextResponse,
   destination: NextResponse,
@@ -17,18 +19,14 @@ function copyCookies(
 
 export async function updateSession(
   request: NextRequest,
-  initialResponse?: NextResponse,
 ) {
-  const response =
-    initialResponse ??
-    NextResponse.next({
-      request,
-    });
+  let response = NextResponse.next({
+    request,
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env
-      .NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll() {
@@ -36,10 +34,16 @@ export async function updateSession(
         },
 
         setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
+
+          response = NextResponse.next({
+            request,
+          });
+
           cookiesToSet.forEach(
             ({ name, value, options }) => {
-              request.cookies.set(name, value);
-
               response.cookies.set(
                 name,
                 value,
@@ -56,34 +60,20 @@ export async function updateSession(
     await supabase.auth.getClaims();
 
   const claims = error ? null : data?.claims;
+  const email =
+    typeof claims?.email === "string"
+      ? claims.email
+      : null;
+
+  const authenticated = Boolean(claims);
+  const administrator =
+    authenticated && isAdministratorEmail(email);
+
   const pathname = request.nextUrl.pathname;
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isLoginPage = pathname === "/admin/login";
 
-  const isAdminRoute =
-    pathname.startsWith("/admin");
-
-  const isLoginPage =
-    pathname === "/admin/login";
-
-  if (
-    isAdminRoute &&
-    !isLoginPage &&
-    !claims
-  ) {
-    const loginUrl = request.nextUrl.clone();
-
-    loginUrl.pathname = "/admin/login";
-    loginUrl.searchParams.set(
-      "next",
-      `${request.nextUrl.pathname}${request.nextUrl.search}`,
-    );
-
-    return copyCookies(
-      response,
-      NextResponse.redirect(loginUrl),
-    );
-  }
-
-  if (isLoginPage && claims) {
+  if (isLoginPage && administrator) {
     const adminUrl = request.nextUrl.clone();
 
     adminUrl.pathname = "/admin";
@@ -92,6 +82,34 @@ export async function updateSession(
     return copyCookies(
       response,
       NextResponse.redirect(adminUrl),
+    );
+  }
+
+  if (
+    isAdminRoute &&
+    !isLoginPage &&
+    !administrator
+  ) {
+    const loginUrl = request.nextUrl.clone();
+
+    loginUrl.pathname = "/admin/login";
+    loginUrl.search = "";
+
+    loginUrl.searchParams.set(
+      "next",
+      `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    );
+
+    if (authenticated) {
+      loginUrl.searchParams.set(
+        "error",
+        "unauthorized",
+      );
+    }
+
+    return copyCookies(
+      response,
+      NextResponse.redirect(loginUrl),
     );
   }
 

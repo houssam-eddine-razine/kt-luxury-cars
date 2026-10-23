@@ -11,6 +11,7 @@ const reservationUpdateSchema = z.object({
   status: z.enum([
     "NEW",
     "CONTACTED",
+    "DECLINED",
     "CONFIRMED",
     "COMPLETED",
     "CANCELLED",
@@ -19,9 +20,23 @@ const reservationUpdateSchema = z.object({
   internalNotes: z
     .string()
     .trim()
-    .max(3000)
+    .max(3000, "Internal notes are too long.")
     .optional(),
 });
+
+function normalizePhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+
+  if (digits.startsWith("212")) {
+    return digits;
+  }
+
+  if (digits.startsWith("0")) {
+    return `212${digits.slice(1)}`;
+  }
+
+  return digits;
+}
 
 async function requireAuthenticatedAdministrator() {
   const supabase = await createClient();
@@ -32,20 +47,30 @@ async function requireAuthenticatedAdministrator() {
   }
 }
 
+function reservationRedirect(
+  result:
+    | "saved"
+    | "blocked"
+    | "invalid"
+    | "missing"
+    | "failed",
+): never {
+  redirect(`/admin/reservations?result=${result}`);
+}
+
 export async function updateReservationRequest(
   requestId: string,
   formData: FormData,
-) {
+): Promise<void> {
   await requireAuthenticatedAdministrator();
 
   const result = reservationUpdateSchema.safeParse({
     status: formData.get("status"),
-    internalNotes:
-      formData.get("internalNotes") ?? "",
+    internalNotes: formData.get("internalNotes") ?? "",
   });
 
   if (!result.success) {
-    return;
+    reservationRedirect("invalid");
   }
 
   const request =
@@ -55,11 +80,30 @@ export async function updateReservationRequest(
       },
       select: {
         id: true,
+        phone: true,
       },
     });
 
   if (!request) {
-    return;
+    reservationRedirect("missing");
+  }
+
+  const phoneKey = normalizePhone(request.phone);
+
+  if (result.data.status === "CONFIRMED") {
+    const customerProfile =
+      await prisma.customerProfile.findUnique({
+        where: {
+          phoneKey,
+        },
+        select: {
+          status: true,
+        },
+      });
+
+    if (customerProfile?.status === "BLOCKED") {
+      reservationRedirect("blocked");
+    }
   }
 
   try {
@@ -82,9 +126,12 @@ export async function updateReservationRequest(
       error,
     );
 
-    return;
+    reservationRedirect("failed");
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/reservations");
+  revalidatePath("/admin/customers");
+
+  reservationRedirect("saved");
 }
