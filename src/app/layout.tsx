@@ -7,6 +7,7 @@ import {
   Geist_Mono,
 } from "next/font/google";
 
+import { PasswordRecoveryHandler } from "@/components/auth/password-recovery-handler";
 import { BusinessStructuredData } from "@/components/seo/structured-data";
 
 import "./globals.css";
@@ -105,6 +106,8 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <PasswordRecoveryHandler />
+
         <BusinessStructuredData locale={language} />
 
         {children}
