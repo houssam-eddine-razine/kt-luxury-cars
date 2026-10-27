@@ -1,10 +1,6 @@
 ﻿"use client";
 
-import {
-  type FormEvent,
-  useMemo,
-  useState,
-} from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -21,8 +17,7 @@ function getToday() {
   const date = new Date();
 
   return new Date(
-    date.getTime() -
-      date.getTimezoneOffset() * 60_000,
+    date.getTime() - date.getTimezoneOffset() * 60_000,
   )
     .toISOString()
     .split("T")[0];
@@ -32,72 +27,32 @@ const fieldClassName =
   "min-h-14 w-full rounded-[12px] border border-[#D8CDBB] bg-white px-4 text-[15px] font-semibold text-[#0B1726] outline-none transition focus:border-[#A47D2F] focus:ring-4 focus:ring-[#C8A45D]/15";
 
 export function BookingBar() {
-  const translations =
-    useTranslations("Booking");
-
+  const translations = useTranslations("Booking");
   const today = useMemo(() => getToday(), []);
 
   const locations = [
-    {
-      value: "airport",
-      label: translations("airport"),
-    },
-    {
-      value: "cityCentre",
-      label: translations("cityCentre"),
-    },
-    {
-      value: "trainStation",
-      label: translations("trainStation"),
-    },
-    {
-      value: "hotelRiad",
-      label: translations("hotelRiad"),
-    },
-    {
-      value: "privateVilla",
-      label: translations("privateVilla"),
-    },
+    { value: "airport", label: translations("airport") },
+    { value: "cityCentre", label: translations("cityCentre") },
+    { value: "trainStation", label: translations("trainStation") },
+    { value: "hotelRiad", label: translations("hotelRiad") },
+    { value: "privateVilla", label: translations("privateVilla") },
   ];
 
   const categories = [
-    {
-      value: "allCategories",
-      label: translations("allCategories"),
-    },
-    {
-      value: "city",
-      label: translations("city"),
-    },
-    {
-      value: "premium",
-      label: translations("premium"),
-    },
-    {
-      value: "luxury",
-      label: translations("luxury"),
-    },
-    {
-      value: "suv",
-      label: translations("suv"),
-    },
+    { value: "allCategories", label: translations("allCategories") },
+    { value: "city", label: translations("city") },
+    { value: "premium", label: translations("premium") },
+    { value: "luxury", label: translations("luxury") },
+    { value: "suv", label: translations("suv") },
   ];
 
-  const [location, setLocation] =
-    useState("airport");
-
+  const [location, setLocation] = useState("airport");
   const [pickup, setPickup] = useState("");
-  const [returnDate, setReturnDate] =
-    useState("");
-
-  const [category, setCategory] =
-    useState("allCategories");
-
+  const [returnDate, setReturnDate] = useState("");
+  const [category, setCategory] = useState("allCategories");
   const [error, setError] = useState("");
 
-  function submit(
-    event: FormEvent<HTMLFormElement>,
-  ) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!pickup || !returnDate) {
@@ -113,14 +68,12 @@ export function BookingBar() {
     setError("");
 
     const selectedLocation =
-      locations.find(
-        (item) => item.value === location,
-      )?.label ?? location;
+      locations.find((item) => item.value === location)?.label ??
+      location;
 
     const selectedCategory =
-      categories.find(
-        (item) => item.value === category,
-      )?.label ?? category;
+      categories.find((item) => item.value === category)?.label ??
+      category;
 
     const message = [
       translations("requestGreeting"),
@@ -142,9 +95,7 @@ export function BookingBar() {
     ].join("\n");
 
     window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(
-        message,
-      )}`,
+      `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
       "_blank",
       "noopener,noreferrer",
     );
@@ -192,16 +143,11 @@ export function BookingBar() {
 
           <select
             value={location}
-            onChange={(event) =>
-              setLocation(event.target.value)
-            }
+            onChange={(event) => setLocation(event.target.value)}
             className={fieldClassName}
           >
             {locations.map((item) => (
-              <option
-                key={item.value}
-                value={item.value}
-              >
+              <option key={item.value} value={item.value}>
                 {item.label}
               </option>
             ))}
@@ -220,15 +166,11 @@ export function BookingBar() {
             min={today}
             value={pickup}
             onChange={(event) => {
-              const selectedDate =
-                event.target.value;
+              const selectedDate = event.target.value;
 
               setPickup(selectedDate);
 
-              if (
-                returnDate &&
-                returnDate < selectedDate
-              ) {
+              if (returnDate && returnDate < selectedDate) {
                 setReturnDate("");
               }
             }}
@@ -247,9 +189,7 @@ export function BookingBar() {
             required
             min={pickup || today}
             value={returnDate}
-            onChange={(event) =>
-              setReturnDate(event.target.value)
-            }
+            onChange={(event) => setReturnDate(event.target.value)}
             className={`${fieldClassName} [color-scheme:light]`}
           />
         </label>
@@ -262,16 +202,11 @@ export function BookingBar() {
 
           <select
             value={category}
-            onChange={(event) =>
-              setCategory(event.target.value)
-            }
+            onChange={(event) => setCategory(event.target.value)}
             className={fieldClassName}
           >
             {categories.map((item) => (
-              <option
-                key={item.value}
-                value={item.value}
-              >
+              <option key={item.value} value={item.value}>
                 {item.label}
               </option>
             ))}
@@ -289,7 +224,7 @@ export function BookingBar() {
       )}
 
       <div className="flex flex-col gap-3 border-t border-[#E4DACB] bg-[#F7F2E9] p-5 sm:p-7 md:flex-row md:items-center md:justify-between">
-        <p className="text-center text-xs leading-5 text-[#74808A] md:text-left">
+        <p className="max-w-xl text-center text-[15px] font-medium leading-7 text-[#435364] md:text-left lg:text-base">
           {translations("deliveryNote")}
         </p>
 

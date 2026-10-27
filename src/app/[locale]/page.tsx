@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import type { Metadata } from "next";
+import Image from "next/image";
 import {
   ArrowRight,
   CalendarCheck,
@@ -17,6 +18,7 @@ import {
 import { getTranslations } from "next-intl/server";
 
 import { BookingBar } from "@/components/public/booking-bar";
+import { FleetGallery } from "@/components/public/fleet-gallery";
 import { ScrollReveal } from "@/components/public/scroll-reveal";
 import { SiteFooter } from "@/components/public/site-footer";
 import { SiteHeader } from "@/components/public/site-header";
@@ -44,9 +46,7 @@ export async function generateMetadata({
 
   return {
     title: translations("metadataTitle"),
-    description: translations(
-      "metadataDescription",
-    ),
+    description: translations("metadataDescription"),
     alternates: {
       languages: {
         en: "/en",
@@ -63,44 +63,34 @@ function formatPrice(value: number) {
 }
 
 export default async function HomePage() {
-  const translations =
-    await getTranslations("Home");
+  const translations = await getTranslations("Home");
+  const fleetTranslations = await getTranslations("Fleet");
 
-  const fleetTranslations =
-    await getTranslations("Fleet");
+  const [vehicles, vehicleCount] = await Promise.all([
+    prisma.vehicle.findMany({
+      where: {
+        visible: true,
+        status: "AVAILABLE",
+      },
+      orderBy: [
+        { featured: "desc" },
+        { createdAt: "desc" },
+      ],
+      take: 6,
+      include: {
+        images: {
+          orderBy: { position: "asc" },
+        },
+      },
+    }),
 
-  const [vehicles, vehicleCount] =
-    await Promise.all([
-      prisma.vehicle.findMany({
-        where: {
-          visible: true,
-          status: "AVAILABLE",
-        },
-        orderBy: [
-          {
-            featured: "desc",
-          },
-          {
-            createdAt: "desc",
-          },
-        ],
-        take: 6,
-        include: {
-          images: {
-            orderBy: {
-              position: "asc",
-            },
-          },
-        },
-      }),
-
-      prisma.vehicle.count({
-        where: {
-          visible: true,
-          status: "AVAILABLE",
-        },
-      }),
-    ]);
+    prisma.vehicle.count({
+      where: {
+        visible: true,
+        status: "AVAILABLE",
+      },
+    }),
+  ]);
 
   const whatsapp = `https://wa.me/${phone}?text=${encodeURIComponent(
     translations("whatsappMessage"),
@@ -131,9 +121,7 @@ export default async function HomePage() {
       number: "01",
       name: translations("cityName"),
       models: translations("cityModels"),
-      description: translations(
-        "cityDescription",
-      ),
+      description: translations("cityDescription"),
       image: "/images/journey-city.png",
       rotation: "xl:-rotate-[1.25deg]",
       action: translations("cityAction"),
@@ -142,9 +130,7 @@ export default async function HomePage() {
       number: "02",
       name: translations("premiumName"),
       models: translations("premiumModels"),
-      description: translations(
-        "premiumDescription",
-      ),
+      description: translations("premiumDescription"),
       image: "/images/journey-premium.png",
       rotation: "xl:rotate-[1deg]",
       action: translations("premiumAction"),
@@ -153,9 +139,7 @@ export default async function HomePage() {
       number: "03",
       name: translations("luxuryName"),
       models: translations("luxuryModels"),
-      description: translations(
-        "luxuryDescription",
-      ),
+      description: translations("luxuryDescription"),
       image: "/images/journey-luxury.png",
       rotation: "xl:-rotate-[1deg]",
       action: translations("luxuryAction"),
@@ -172,15 +156,11 @@ export default async function HomePage() {
       answer: translations("faqTwoAnswer"),
     },
     {
-      question: translations(
-        "faqThreeQuestion",
-      ),
+      question: translations("faqThreeQuestion"),
       answer: translations("faqThreeAnswer"),
     },
     {
-      question: translations(
-        "faqFourQuestion",
-      ),
+      question: translations("faqFourQuestion"),
       answer: translations("faqFourAnswer"),
     },
   ];
@@ -238,9 +218,7 @@ export default async function HomePage() {
                   className="inline-flex min-h-14 items-center justify-center gap-3 rounded-[10px] border border-[#C8A45D]/70 bg-[#0B1726]/70 px-6 text-xs font-bold uppercase tracking-[0.12em] text-white sm:px-8"
                 >
                   <MessageCircle className="size-5" />
-                  {translations(
-                    "whatsappConcierge",
-                  )}
+                  {translations("whatsappConcierge")}
                 </a>
               </div>
 
@@ -272,15 +250,15 @@ export default async function HomePage() {
           </div>
         </section>
 
+        <FleetGallery />
+
         <TrustStats vehicleCount={vehicleCount} />
 
         <section className="overflow-hidden bg-[#F7F2E9] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-28">
           <div className="mx-auto max-w-[1400px]">
             <div className="mx-auto max-w-4xl text-center">
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#9A762F] sm:text-base">
-                {translations(
-                  "collectionsEyebrow",
-                )}
+                {translations("collectionsEyebrow")}
               </p>
 
               <h2 className="mt-4 font-heading text-4xl font-semibold leading-[1.08] text-[#0B1726] sm:text-5xl lg:text-6xl">
@@ -294,87 +272,80 @@ export default async function HomePage() {
               </div>
 
               <p className="mx-auto mt-6 max-w-2xl text-[15px] leading-7 text-[#66727D] sm:text-base sm:leading-8">
-                {translations(
-                  "collectionsDescription",
-                )}
+                {translations("collectionsDescription")}
               </p>
             </div>
 
             <div className="mt-10 grid gap-7 sm:mt-14 md:grid-cols-2 xl:grid-cols-3">
-              {collections.map(
-                (collection, index) => {
-                  const message = encodeURIComponent(
-                    translations(
-                      "collectionMessage",
-                      {
-                        category: collection.name,
-                      },
-                    ),
-                  );
+              {collections.map((collection, index) => {
+                const message = encodeURIComponent(
+                  translations("collectionMessage", {
+                    category: collection.name,
+                  }),
+                );
 
-                  return (
-                    <ScrollReveal
-                      key={collection.number}
-                      direction={
-                        index === 0 ? "left" : "up"
-                      }
-                      delay={index * 100}
-                      className={`h-full ${
-                        index === 2
-                          ? "md:col-span-2 xl:col-span-1"
-                          : ""
-                      }`}
+                return (
+                  <ScrollReveal
+                    key={collection.number}
+                    direction={index === 0 ? "left" : "up"}
+                    delay={index * 100}
+                    className={`h-full ${
+                      index === 2
+                        ? "md:col-span-2 xl:col-span-1"
+                        : ""
+                    }`}
+                  >
+                    <article
+                      className={`group relative mx-auto h-full w-full max-w-[540px] overflow-hidden rounded-[16px] border border-[#D8CDBB] bg-[#FFFCF7] shadow-[0_24px_55px_rgba(11,23,38,0.12)] transition duration-500 hover:-translate-y-2 ${collection.rotation}`}
                     >
-                      <article
-                        className={`group relative mx-auto h-full w-full max-w-[540px] overflow-hidden rounded-[16px] border border-[#D8CDBB] bg-[#FFFCF7] shadow-[0_24px_55px_rgba(11,23,38,0.12)] transition duration-500 hover:-translate-y-2 ${collection.rotation}`}
-                      >
-                        <div className="relative aspect-[4/5] overflow-hidden">
-                          <img
-                            src={collection.image}
-                            alt={collection.name}
-                            className="size-full object-cover transition duration-700 group-hover:scale-105"
-                          />
+                      <div className="relative aspect-[4/5] overflow-hidden">
+                        <Image
+                          src={collection.image}
+                          alt={collection.name}
+                          fill
+                          sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+                          className="size-full object-cover transition duration-700 group-hover:scale-105"
+                        />
 
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#07111E] via-transparent to-black/10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#07111E] via-transparent to-black/10" />
 
-                          <span className="absolute left-4 top-4 flex size-10 items-center justify-center rounded-full border border-[#C8A45D]/60 bg-[#0B1726]/90 font-heading text-lg text-[#D8B868]">
-                            {collection.number}
-                          </span>
+                        <span className="absolute left-4 top-4 flex size-10 items-center justify-center rounded-full border border-[#C8A45D]/60 bg-[#0B1726]/90 font-heading text-lg text-[#D8B868]">
+                          {collection.number}
+                        </span>
 
-                          <div className="absolute inset-x-4 top-6 rounded-[10px] border border-[#C8A45D]/40 bg-[#0B1726]/95 px-4 py-4 text-center">
-                            <h3 className="font-heading text-3xl font-semibold uppercase text-[#D8B868] sm:text-4xl">
-                              {collection.name}
-                            </h3>
+                        <div className="absolute inset-x-4 top-6 rounded-[10px] border border-[#C8A45D]/40 bg-[#0B1726]/95 px-4 py-4 text-center">
+                          <h3 className="font-heading text-3xl font-semibold uppercase text-[#D8B868] sm:text-4xl">
+                            {collection.name}
+                          </h3>
 
-                            <p className="mt-2 text-sm font-semibold text-white">
-                              {collection.models}
-                            </p>
-                          </div>
-
-                          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
-                            <p className="text-sm leading-7 text-white/90">
-                              {collection.description}
-                            </p>
-
-                            <a
-                              href={`https://wa.me/${phone}?text=${message}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-5 flex min-h-14 items-center justify-between border-t border-[#C8A45D]/55 pt-4 text-sm font-bold text-[#E3C474]"
-                            >
-                              {collection.action}
-
-                              <span className="flex size-11 items-center justify-center rounded-full border border-[#C8A45D]/70 bg-[#0B1726]/85">
-                                <ArrowRight className="size-5" />
-                              </span>
-                            </a>
-                          </div>
+                          <p className="mt-2 text-sm font-semibold text-white">
+                            {collection.models}
+                          </p>
                         </div>
-                      </article>
-                    </ScrollReveal>
-                  );
-                },
-              )}
+
+                        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7">
+                          <p className="text-sm leading-7 text-white/90">
+                            {collection.description}
+                          </p>
+
+                          <a
+                            href={`https://wa.me/${phone}?text=${message}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-5 flex min-h-14 items-center justify-between border-t border-[#C8A45D]/55 pt-4 text-sm font-bold text-[#E3C474]"
+                          >
+                            {collection.action}
+
+                            <span className="flex size-11 items-center justify-center rounded-full border border-[#C8A45D]/70 bg-[#0B1726]/85">
+                              <ArrowRight className="size-5" />
+                            </span>
+                          </a>
+                        </div>
+                      </div>
+                    </article>
+                  </ScrollReveal>
+                );
+              })}
             </div>
 
             <div className="mt-12 grid overflow-hidden rounded-[20px] border border-[#DDD1BE] bg-[#FFFCF7] md:grid-cols-3">
@@ -382,27 +353,17 @@ export default async function HomePage() {
                 {
                   icon: ShieldCheck,
                   title: translations("clearTerms"),
-                  text: translations(
-                    "termsDescription",
-                  ),
+                  text: translations("termsDescription"),
                 },
                 {
                   icon: MapPin,
-                  title: translations(
-                    "privateDelivery",
-                  ),
-                  text: translations(
-                    "deliveryDescription",
-                  ),
+                  title: translations("privateDelivery"),
+                  text: translations("deliveryDescription"),
                 },
                 {
                   icon: MessageCircle,
-                  title: translations(
-                    "directService",
-                  ),
-                  text: translations(
-                    "directServiceDescription",
-                  ),
+                  title: translations("directService"),
+                  text: translations("directServiceDescription"),
                 },
               ].map((item, index) => {
                 const Icon = item.icon;
@@ -451,9 +412,7 @@ export default async function HomePage() {
                   {translations("fleetTitleFirst")}
 
                   <span className="block italic text-[#A47D2F]">
-                    {translations(
-                      "fleetTitleSecond",
-                    )}
+                    {translations("fleetTitleSecond")}
                   </span>
                 </h2>
               </div>
@@ -465,13 +424,9 @@ export default async function HomePage() {
 
                 <div className="mt-5 flex flex-wrap gap-5 text-sm text-[#4F5E6B]">
                   {[
-                    translations(
-                      "realAvailability",
-                    ),
+                    translations("realAvailability"),
                     translations("clearPrices"),
-                    translations(
-                      "privateDelivery",
-                    ),
+                    translations("privateDelivery"),
                   ].map((item) => (
                     <span
                       key={item}
@@ -490,15 +445,11 @@ export default async function HomePage() {
                 <Sparkles className="mx-auto size-8 text-[#A47D2F]" />
 
                 <h3 className="mt-5 font-heading text-3xl font-semibold text-[#0B1726]">
-                  {translations(
-                    "noVehiclesTitle",
-                  )}
+                  {translations("noVehiclesTitle")}
                 </h3>
 
                 <p className="mx-auto mt-4 max-w-xl text-[#66727D]">
-                  {translations(
-                    "noVehiclesDescription",
-                  )}
+                  {translations("noVehiclesDescription")}
                 </p>
 
                 <a
@@ -508,180 +459,142 @@ export default async function HomePage() {
                   className="mt-7 inline-flex min-h-14 items-center gap-3 rounded-[10px] bg-[#128C5A] px-7 text-sm font-bold text-white"
                 >
                   <MessageCircle className="size-5" />
-                  {translations(
-                    "requestAvailability",
-                  )}
+                  {translations("requestAvailability")}
                 </a>
               </div>
             ) : (
               <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                {vehicles.map(
-                  (vehicle, index) => {
-                    const cover =
-                      vehicle.images.find(
-                        (image) => image.isCover,
-                      ) ?? vehicle.images[0];
+                {vehicles.map((vehicle, index) => {
+                  const cover =
+                    vehicle.images.find((image) => image.isCover) ??
+                    vehicle.images[0];
 
-                    return (
-                      <ScrollReveal
-                        key={vehicle.id}
-                        direction={
-                          index === 0
-                            ? "left"
-                            : "up"
-                        }
-                        delay={Math.min(
-                          index * 90,
-                          270,
-                        )}
-                        className="h-full"
-                      >
-                        <article className="group h-full overflow-hidden rounded-[20px] border border-[#D8CDBB] bg-[#FFFCF7] shadow-[0_18px_45px_rgba(11,23,38,0.1)]">
+                  return (
+                    <ScrollReveal
+                      key={vehicle.id}
+                      direction={index === 0 ? "left" : "up"}
+                      delay={Math.min(index * 90, 270)}
+                      className="h-full"
+                    >
+                      <article className="group h-full overflow-hidden rounded-[20px] border border-[#D8CDBB] bg-[#FFFCF7] shadow-[0_18px_45px_rgba(11,23,38,0.1)]">
+                        <Link
+                          href={`/vehicles/${vehicle.slug}`}
+                          className="relative block aspect-[16/10] overflow-hidden bg-[#E4DDD2]"
+                        >
+                          {cover ? (
+                            <img
+                              src={cover.url}
+                              alt={
+                                cover.altText ||
+                                `${vehicle.brand} ${vehicle.model}`
+                              }
+                              className="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
+                            />
+                          ) : (
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <Sparkles className="size-8 text-[#A47D2F]" />
+                            </span>
+                          )}
+
+                          <span className="absolute left-4 top-4 rounded-full bg-[#F7F2E9]/95 px-3 py-2 text-[9px] font-bold uppercase text-[#0B1726]">
+                            {categoryLabels[vehicle.category]}
+                          </span>
+                        </Link>
+
+                        <div className="p-5">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold uppercase text-[#A47D2F]">
+                                {vehicle.year} ·{" "}
+                                {transmissionLabels[
+                                  vehicle.transmission
+                                ] ?? vehicle.transmission}
+                              </p>
+
+                              <h3 className="mt-1.5 truncate font-heading text-[28px] font-semibold text-[#0B1726]">
+                                {vehicle.brand} {vehicle.model}
+                              </h3>
+
+                              {vehicle.trim && (
+                                <p className="mt-1 truncate text-xs text-[#74808A]">
+                                  {vehicle.trim}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="shrink-0 text-right">
+                              <p className="text-[9px] uppercase text-[#7A8691]">
+                                {fleetTranslations("from")}
+                              </p>
+
+                              <p className="font-heading text-2xl font-semibold text-[#A47D2F]">
+                                {formatPrice(vehicle.dailyPrice)}
+                              </p>
+
+                              <p className="text-[10px] text-[#74808A]">
+                                {fleetTranslations("perDay")}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-4 divide-x divide-[#DDD1BE] rounded-[11px] bg-[#F1ECE4] py-3 text-center">
+                            <div>
+                              <p className="text-xs font-bold">
+                                {vehicle.seats}
+                              </p>
+                              <p className="text-[9px] text-[#74808A]">
+                                {fleetTranslations("seats")}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs font-bold">
+                                {vehicle.doors}
+                              </p>
+                              <p className="text-[9px] text-[#74808A]">
+                                {fleetTranslations("doors")}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="truncate px-1 text-xs font-bold">
+                                {fuelLabels[vehicle.fuelType] ??
+                                  vehicle.fuelType}
+                              </p>
+                              <p className="text-[9px] text-[#74808A]">
+                                {fleetTranslations("fuel")}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="truncate px-1 text-xs font-bold">
+                                {
+                                  transmissionLabels[
+                                    vehicle.transmission
+                                  ]
+                                }
+                              </p>
+                              <p className="text-[9px] text-[#74808A]">
+                                {vehicle.transmission}
+                              </p>
+                            </div>
+                          </div>
+
                           <Link
                             href={`/vehicles/${vehicle.slug}`}
-                            className="relative block aspect-[16/10] overflow-hidden bg-[#E4DDD2]"
+                            className="mt-4 flex min-h-12 items-center justify-between rounded-[10px] bg-[#0B1726] px-4 text-xs font-bold text-white"
                           >
-                            {cover ? (
-                              <img
-                                src={cover.url}
-                                alt={
-                                  cover.altText ||
-                                  `${vehicle.brand} ${vehicle.model}`
-                                }
-                                className="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
-                              />
-                            ) : (
-                              <span className="absolute inset-0 flex items-center justify-center">
-                                <Sparkles className="size-8 text-[#A47D2F]" />
-                              </span>
-                            )}
+                            {fleetTranslations("viewVehicle")}
 
-                            <span className="absolute left-4 top-4 rounded-full bg-[#F7F2E9]/95 px-3 py-2 text-[9px] font-bold uppercase text-[#0B1726]">
-                              {
-                                categoryLabels[
-                                  vehicle.category
-                                ]
-                              }
+                            <span className="flex size-8 items-center justify-center rounded-full bg-[#C8A45D] text-[#0B1726]">
+                              <ArrowRight className="size-4" />
                             </span>
                           </Link>
-
-                          <div className="p-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-bold uppercase text-[#A47D2F]">
-                                  {vehicle.year} ·{" "}
-                                  {transmissionLabels[
-                                    vehicle
-                                      .transmission
-                                  ] ??
-                                    vehicle.transmission}
-                                </p>
-
-                                <h3 className="mt-1.5 truncate font-heading text-[28px] font-semibold text-[#0B1726]">
-                                  {vehicle.brand}{" "}
-                                  {vehicle.model}
-                                </h3>
-
-                                {vehicle.trim && (
-                                  <p className="mt-1 truncate text-xs text-[#74808A]">
-                                    {vehicle.trim}
-                                  </p>
-                                )}
-                              </div>
-
-                              <div className="shrink-0 text-right">
-                                <p className="text-[9px] uppercase text-[#7A8691]">
-                                  {fleetTranslations(
-                                    "from",
-                                  )}
-                                </p>
-
-                                <p className="font-heading text-2xl font-semibold text-[#A47D2F]">
-                                  {formatPrice(
-                                    vehicle.dailyPrice,
-                                  )}
-                                </p>
-
-                                <p className="text-[10px] text-[#74808A]">
-                                  {fleetTranslations(
-                                    "perDay",
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="mt-4 grid grid-cols-4 divide-x divide-[#DDD1BE] rounded-[11px] bg-[#F1ECE4] py-3 text-center">
-                              <div>
-                                <p className="text-xs font-bold">
-                                  {vehicle.seats}
-                                </p>
-                                <p className="text-[9px] text-[#74808A]">
-                                  {fleetTranslations(
-                                    "seats",
-                                  )}
-                                </p>
-                              </div>
-
-                              <div>
-                                <p className="text-xs font-bold">
-                                  {vehicle.doors}
-                                </p>
-                                <p className="text-[9px] text-[#74808A]">
-                                  {fleetTranslations(
-                                    "doors",
-                                  )}
-                                </p>
-                              </div>
-
-                              <div>
-                                <p className="truncate px-1 text-xs font-bold">
-                                  {fuelLabels[
-                                    vehicle.fuelType
-                                  ] ??
-                                    vehicle.fuelType}
-                                </p>
-                                <p className="text-[9px] text-[#74808A]">
-                                  {fleetTranslations(
-                                    "fuel",
-                                  )}
-                                </p>
-                              </div>
-
-                              <div>
-                                <p className="truncate px-1 text-xs font-bold">
-                                  {
-                                    transmissionLabels[
-                                      vehicle
-                                        .transmission
-                                    ]
-                                  }
-                                </p>
-                                <p className="text-[9px] text-[#74808A]">
-                                  {
-                                    vehicle.transmission
-                                  }
-                                </p>
-                              </div>
-                            </div>
-
-                            <Link
-                              href={`/vehicles/${vehicle.slug}`}
-                              className="mt-4 flex min-h-12 items-center justify-between rounded-[10px] bg-[#0B1726] px-4 text-xs font-bold text-white"
-                            >
-                              {fleetTranslations(
-                                "viewVehicle",
-                              )}
-
-                              <span className="flex size-8 items-center justify-center rounded-full bg-[#C8A45D] text-[#0B1726]">
-                                <ArrowRight className="size-4" />
-                              </span>
-                            </Link>
-                          </div>
-                        </article>
-                      </ScrollReveal>
-                    );
-                  },
-                )}
+                        </div>
+                      </article>
+                    </ScrollReveal>
+                  );
+                })}
               </div>
             )}
 
@@ -718,32 +631,20 @@ export default async function HomePage() {
                 {
                   number: "01",
                   icon: Search,
-                  title: translations(
-                    "stepOneTitle",
-                  ),
-                  text: translations(
-                    "stepOneDescription",
-                  ),
+                  title: translations("stepOneTitle"),
+                  text: translations("stepOneDescription"),
                 },
                 {
                   number: "02",
                   icon: CalendarCheck,
-                  title: translations(
-                    "stepTwoTitle",
-                  ),
-                  text: translations(
-                    "stepTwoDescription",
-                  ),
+                  title: translations("stepTwoTitle"),
+                  text: translations("stepTwoDescription"),
                 },
                 {
                   number: "03",
                   icon: KeyRound,
-                  title: translations(
-                    "stepThreeTitle",
-                  ),
-                  text: translations(
-                    "stepThreeDescription",
-                  ),
+                  title: translations("stepThreeTitle"),
+                  text: translations("stepThreeDescription"),
                 },
               ].map((item, index) => {
                 const Icon = item.icon;
@@ -761,8 +662,7 @@ export default async function HomePage() {
                       </div>
 
                       <p className="mt-6 text-xs font-bold uppercase text-[#D8B868]">
-                        {translations("step")}{" "}
-                        {item.number}
+                        {translations("step")} {item.number}
                       </p>
 
                       <h3 className="mt-2 font-heading text-2xl font-semibold">
@@ -807,9 +707,7 @@ export default async function HomePage() {
               </h2>
 
               <p className="mt-6 leading-8 text-[#66727D]">
-                {translations(
-                  "servicesDescription",
-                )}
+                {translations("servicesDescription")}
               </p>
             </div>
 
@@ -820,30 +718,18 @@ export default async function HomePage() {
               {[
                 {
                   icon: MapPin,
-                  title: translations(
-                    "privateDelivery",
-                  ),
-                  text: translations(
-                    "deliveryDescription",
-                  ),
+                  title: translations("privateDelivery"),
+                  text: translations("deliveryDescription"),
                 },
                 {
                   icon: Clock3,
-                  title: translations(
-                    "directService",
-                  ),
-                  text: translations(
-                    "directServiceDescription",
-                  ),
+                  title: translations("directService"),
+                  text: translations("directServiceDescription"),
                 },
                 {
                   icon: ShieldCheck,
-                  title: translations(
-                    "preparedVehicles",
-                  ),
-                  text: translations(
-                    "preparedDescription",
-                  ),
+                  title: translations("preparedVehicles"),
+                  text: translations("preparedDescription"),
                 },
               ].map((item, index) => {
                 const Icon = item.icon;
